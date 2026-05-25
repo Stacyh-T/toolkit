@@ -14,11 +14,17 @@ NC='\033[0m'
 
 TOOLKIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# ── Taille estimée par composant (en Mo) ────────────────────
-SIZE_APT=800        # ~30 outils apt
-SIZE_GITHUB=200     # ~10 repos clonés
-SIZE_WORDLISTS=1200 # SecLists (~1Go) + rockyou
-SIZE_CONFIGS=1      # dotfiles, négligeable
+# ── Taille moyenne par outil (ajustable) ─────────────────────
+AVG_APT_MB=25       # Mo moyen par outil apt
+AVG_GITHUB_MB=20    # Mo moyen par repo GitHub cloné
+SIZE_WORDLISTS=1200 # Fixe : SecLists (~1Go) + rockyou (~200Mo)
+SIZE_CONFIGS=1      # Fixe : dotfiles, négligeable
+
+# ── Calcul dynamique selon le contenu des scripts ────────────
+NB_APT=$(grep -c "install_apt" "$TOOLKIT_DIR/setup/apt-tools.sh" 2>/dev/null || echo 0)
+NB_GITHUB=$(grep -c "clone_tool" "$TOOLKIT_DIR/setup/git-tools.sh" 2>/dev/null || echo 0)
+SIZE_APT=$(( NB_APT * AVG_APT_MB ))
+SIZE_GITHUB=$(( NB_GITHUB * AVG_GITHUB_MB ))
 
 # ── Fonctions affichage ──────────────────────────────────────
 banner() {
@@ -39,15 +45,35 @@ ok()   { echo -e "${GREEN}[✓]${NC} $1"; }
 warn() { echo -e "${YELLOW}[!]${NC} $1"; }
 fail() { echo -e "${RED}[✗]${NC} $1"; }
 
-# ── Calcul espace disque ─────────────────────────────────────
+# ── Résumé tailles (dynamique) ───────────────────────────────
+show_size_summary() {
+  local available_mb
+  available_mb=$(df -m "$HOME" | awk 'NR==2 {print $4}')
+  local available_gb=$(( available_mb / 1024 ))
+  local total=$(( SIZE_APT + SIZE_GITHUB + SIZE_WORDLISTS + SIZE_CONFIGS ))
+  local total_gb=$(( total / 1024 ))
+
+  echo -e "${CYAN}  ┌──────────────────────────────────────────────────┐${NC}"
+  echo -e "${CYAN}  │            Taille estimée du toolkit             │${NC}"
+  echo -e "${CYAN}  ├────────────────────────────────┬─────────────────┤${NC}"
+  echo -e "${CYAN}  │${NC}  Outils apt   (${NB_APT} outils x ${AVG_APT_MB}Mo)   ${CYAN}│${NC} ${YELLOW}~${SIZE_APT} Mo${NC}          ${CYAN}│${NC}"
+  echo -e "${CYAN}  │${NC}  Outils GitHub (${NB_GITHUB} repos x ${AVG_GITHUB_MB}Mo)    ${CYAN}│${NC} ${YELLOW}~${SIZE_GITHUB} Mo${NC}          ${CYAN}│${NC}"
+  echo -e "${CYAN}  │${NC}  Wordlists (SecLists + rockyou)  ${CYAN}│${NC} ${YELLOW}~${SIZE_WORDLISTS} Mo${NC}         ${CYAN}│${NC}"
+  echo -e "${CYAN}  │${NC}  Configs (dotfiles)              ${CYAN}│${NC} ${YELLOW}~${SIZE_CONFIGS} Mo${NC}           ${CYAN}│${NC}"
+  echo -e "${CYAN}  ├────────────────────────────────┼─────────────────┤${NC}"
+  echo -e "${CYAN}  │${NC}  ${GREEN}TOTAL${NC}                           ${CYAN}│${NC} ${GREEN}~${total} Mo (~${total_gb} Go)${NC}  ${CYAN}│${NC}"
+  echo -e "${CYAN}  ├────────────────────────────────┼─────────────────┤${NC}"
+  echo -e "${CYAN}  │${NC}  Disponible sur $HOME          ${CYAN}│${NC} ${GREEN}~${available_mb} Mo (~${available_gb} Go)${NC}${CYAN}│${NC}"
+  echo -e "${CYAN}  └────────────────────────────────┴─────────────────┘${NC}"
+  echo ""
+}
+
+# ── Vérification espace disque ───────────────────────────────
 check_disk_space() {
   local required_mb="$1"
   local label="$2"
-
-  # Espace disponible sur la partition home (en Mo)
   local available_mb
   available_mb=$(df -m "$HOME" | awk 'NR==2 {print $4}')
-
   local available_gb=$(( available_mb / 1024 ))
   local required_gb=$(( required_mb / 1024 ))
 
@@ -93,29 +119,6 @@ run_step() {
   fi
 }
 
-# ── Résumé tailles ───────────────────────────────────────────
-show_size_summary() {
-  local available_mb
-  available_mb=$(df -m "$HOME" | awk 'NR==2 {print $4}')
-  local available_gb=$(( available_mb / 1024 ))
-  local total=$(( SIZE_APT + SIZE_GITHUB + SIZE_WORDLISTS + SIZE_CONFIGS ))
-  local total_gb=$(( total / 1024 ))
-
-  echo -e "${CYAN}  ┌─────────────────────────────────────────────┐${NC}"
-  echo -e "${CYAN}  │           Taille estimée du toolkit         │${NC}"
-  echo -e "${CYAN}  ├──────────────────────────────┬──────────────┤${NC}"
-  echo -e "${CYAN}  │${NC}  Outils apt                  ${CYAN}│${NC} ${YELLOW}~${SIZE_APT} Mo${NC}       ${CYAN}│${NC}"
-  echo -e "${CYAN}  │${NC}  Outils GitHub               ${CYAN}│${NC} ${YELLOW}~${SIZE_GITHUB} Mo${NC}       ${CYAN}│${NC}"
-  echo -e "${CYAN}  │${NC}  Wordlists (SecLists+rockyou)${CYAN}│${NC} ${YELLOW}~${SIZE_WORDLISTS} Mo${NC}      ${CYAN}│${NC}"
-  echo -e "${CYAN}  │${NC}  Configs (dotfiles)          ${CYAN}│${NC} ${YELLOW}~${SIZE_CONFIGS} Mo${NC}         ${CYAN}│${NC}"
-  echo -e "${CYAN}  ├──────────────────────────────┼──────────────┤${NC}"
-  echo -e "${CYAN}  │${NC}  ${GREEN}TOTAL${NC}                        ${CYAN}│${NC} ${GREEN}~${total} Mo (~${total_gb} Go)${NC}${CYAN}│${NC}"
-  echo -e "${CYAN}  ├──────────────────────────────┼──────────────┤${NC}"
-  echo -e "${CYAN}  │${NC}  Disponible sur $HOME       ${CYAN}│${NC} ${GREEN}~${available_mb} Mo (~${available_gb} Go)${NC}${CYAN}│${NC}"
-  echo -e "${CYAN}  └──────────────────────────────┴──────────────┘${NC}"
-  echo ""
-}
-
 # ── MAIN ─────────────────────────────────────────────────────
 banner
 check_root
@@ -123,19 +126,19 @@ show_size_summary
 
 echo "  Que veux-tu installer ?"
 echo ""
-echo -e "  [1] Tout (recommandé)            ${YELLOW}~2.2 Go${NC}"
-echo -e "  [2] Outils apt seulement         ${YELLOW}~800 Mo${NC}"
-echo -e "  [3] Outils GitHub seulement      ${YELLOW}~200 Mo${NC}"
-echo -e "  [4] Wordlists seulement          ${YELLOW}~1.2 Go${NC}"
-echo -e "  [5] Configs seulement            ${YELLOW}~1 Mo${NC}"
+echo -e "  [1] Tout (recommandé)            ${YELLOW}~$(( SIZE_APT + SIZE_GITHUB + SIZE_WORDLISTS + SIZE_CONFIGS )) Mo${NC}"
+echo -e "  [2] Outils apt seulement         ${YELLOW}~${SIZE_APT} Mo${NC}  (${NB_APT} outils)"
+echo -e "  [3] Outils GitHub seulement      ${YELLOW}~${SIZE_GITHUB} Mo${NC}  (${NB_GITHUB} repos)"
+echo -e "  [4] Wordlists seulement          ${YELLOW}~${SIZE_WORDLISTS} Mo${NC}"
+echo -e "  [5] Configs seulement            ${YELLOW}~${SIZE_CONFIGS} Mo${NC}"
 echo ""
 read -rp "  Choix [1-5] : " choice
 
-# Calcul espace selon le choix
+# Vérification espace selon le choix
 case $choice in
   1) check_disk_space $(( SIZE_APT + SIZE_GITHUB + SIZE_WORDLISTS + SIZE_CONFIGS )) "apt + GitHub + wordlists + configs" ;;
-  2) check_disk_space "$SIZE_APT"       "outils apt" ;;
-  3) check_disk_space "$SIZE_GITHUB"    "outils GitHub" ;;
+  2) check_disk_space "$SIZE_APT"       "outils apt ($NB_APT outils)" ;;
+  3) check_disk_space "$SIZE_GITHUB"    "outils GitHub ($NB_GITHUB repos)" ;;
   4) check_disk_space "$SIZE_WORDLISTS" "wordlists" ;;
   5) check_disk_space "$SIZE_CONFIGS"   "configs" ;;
   *) fail "Choix invalide."; exit 1 ;;
