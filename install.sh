@@ -48,6 +48,7 @@ fail() { echo -e "${RED}[✗] Erreur : $1${NC}"; }
 info() { echo -e "${YELLOW}[>] $1${NC}"; }
 
 # ── Résumé espace disque ─────────────────────────────────────
+# ── Résumé espace disque ─────────────────────────────────────
 show_size_summary() {
   local available_mb
   available_mb=$(df -m "$HOME" | awk 'NR==2 {print $4}')
@@ -55,17 +56,38 @@ show_size_summary() {
   local total=$(( SIZE_APT + SIZE_GITHUB + SIZE_WORDLISTS + SIZE_CONFIGS ))
   local total_gb=$(( total / 1024 ))
 
+  # Utilisation de printf pour forcer des colonnes de taille fixe (30 et 15 caractères)
+  # Cela empêche les variables de décaler le tableau.
+  local l_apt=$(printf "%-30s" "Outils apt   (${NB_APT} x ${AVG_APT_MB}Mo)")
+  local v_apt=$(printf "%-15s" "~${SIZE_APT} Mo")
+
+  local l_git=$(printf "%-30s" "Outils GitHub (${NB_GITHUB} x ${AVG_GITHUB_MB}Mo)")
+  local v_git=$(printf "%-15s" "~${SIZE_GITHUB} Mo")
+
+  local l_wrd=$(printf "%-30s" "Wordlists (SecLists+rockyou)")
+  local v_wrd=$(printf "%-15s" "~${SIZE_WORDLISTS} Mo")
+
+  local l_cfg=$(printf "%-30s" "Configs (dotfiles)")
+  local v_cfg=$(printf "%-15s" "~${SIZE_CONFIGS} Mo")
+
+  local l_tot=$(printf "%-30s" "TOTAL")
+  local v_tot=$(printf "%-15s" "~${total} Mo (~${total_gb} Go)")
+
+  local l_dis=$(printf "%-30s" "Disponible sur $HOME")
+  local v_dis=$(printf "%-15s" "~${available_mb} Mo (~${available_gb} Go)")
+
+  # Affichage du tableau avec des bordures parfaitement alignées
   echo -e "${CYAN}  ┌──────────────────────────────────────────────────┐${NC}"
   echo -e "${CYAN}  │            Taille estimée du toolkit             │${NC}"
   echo -e "${CYAN}  ├────────────────────────────────┬─────────────────┤${NC}"
-  echo -e "${CYAN}  │${NC}  Outils apt   (${NB_APT} x ${AVG_APT_MB}Mo)          ${CYAN}│${NC} ${YELLOW}~${SIZE_APT} Mo${NC}          ${CYAN}│${NC}"
-  echo -e "${CYAN}  │${NC}  Outils GitHub (${NB_GITHUB} x ${AVG_GITHUB_MB}Mo)         ${CYAN}│${NC} ${YELLOW}~${SIZE_GITHUB} Mo${NC}          ${CYAN}│${NC}"
-  echo -e "${CYAN}  │${NC}  Wordlists (SecLists + rockyou)  ${CYAN}│${NC} ${YELLOW}~${SIZE_WORDLISTS} Mo${NC}         ${CYAN}│${NC}"
-  echo -e "${CYAN}  │${NC}  Configs (dotfiles)              ${CYAN}│${NC} ${YELLOW}~${SIZE_CONFIGS} Mo${NC}           ${CYAN}│${NC}"
+  echo -e "${CYAN}  │${NC} ${l_apt} ${CYAN}│${NC} ${YELLOW}${v_apt}${NC} ${CYAN}│${NC}"
+  echo -e "${CYAN}  │${NC} ${l_git} ${CYAN}│${NC} ${YELLOW}${v_git}${NC} ${CYAN}│${NC}"
+  echo -e "${CYAN}  │${NC} ${l_wrd} ${CYAN}│${NC} ${YELLOW}${v_wrd}${NC} ${CYAN}│${NC}"
+  echo -e "${CYAN}  │${NC} ${l_cfg} ${CYAN}│${NC} ${YELLOW}${v_cfg}${NC} ${CYAN}│${NC}"
   echo -e "${CYAN}  ├────────────────────────────────┼─────────────────┤${NC}"
-  echo -e "${CYAN}  │${NC}  ${GREEN}TOTAL${NC}                           ${CYAN}│${NC} ${GREEN}~${total} Mo (~${total_gb} Go)${NC}  ${CYAN}│${NC}"
+  echo -e "${CYAN}  │${NC} ${GREEN}${l_tot}${NC} ${CYAN}│${NC} ${GREEN}${v_tot}${NC} ${CYAN}│${NC}"
   echo -e "${CYAN}  ├────────────────────────────────┼─────────────────┤${NC}"
-  echo -e "${CYAN}  │${NC}  Disponible sur $HOME          ${CYAN}│${NC} ${GREEN}~${available_mb} Mo (~${available_gb} Go)${NC}${CYAN}│${NC}"
+  echo -e "${CYAN}  │${NC} ${l_dis} ${CYAN}│${NC} ${GREEN}${v_dis}${NC} ${CYAN}│${NC}"
   echo -e "${CYAN}  └────────────────────────────────┴─────────────────┘${NC}"
   echo ""
 }
