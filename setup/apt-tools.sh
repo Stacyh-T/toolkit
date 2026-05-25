@@ -6,13 +6,24 @@
 # ============================================================
 
 ok()   { echo -e "\033[0;32m[✓]\033[0m $1"; }
+skip() { echo -e "\033[0;36m[~]\033[0m $1"; }
 fail() { echo -e "\033[0;31m[✗]\033[0m $1"; }
 step() { echo -e "\n\033[0;36m[*]\033[0m $1"; }
 
 install_apt() {
   local tool="$1"
+  # Vérifie si la commande est déjà disponible sur le système
+  if command -v "$tool" &>/dev/null; then
+    skip "$tool (déjà installé — ignoré)"
+    return
+  fi
+  # Vérifie aussi via dpkg pour les paquets sans binaire du même nom
+  if dpkg -s "$tool" &>/dev/null 2>&1; then
+    skip "$tool (déjà installé via dpkg — ignoré)"
+    return
+  fi
   if apt-get install -y "$tool" &>/dev/null; then
-    ok "$tool"
+    ok "$tool installé"
   else
     fail "$tool (échec — vérifie manuellement)"
   fi
