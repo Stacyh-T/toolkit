@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ============================================================
-#   TOOLKIT INSTALLER (Version Verbeuse)
+#   TOOLKIT INSTALLER
 #   Compatible: Kali Linux / Parrot OS
 #   Usage: ./install.sh
 # ============================================================
