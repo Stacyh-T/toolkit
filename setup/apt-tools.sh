@@ -79,9 +79,8 @@ install_apt metasploit-framework
 install_apt netcat-traditional
 
 # ── FORENSICS ────────────────────────────────────────────────
-step "Forensics"
-install_apt autopsy
-install_apt volatility3
+# autopsy    → installé depuis GitHub (version à jour)
+# volatility3 → installé depuis GitHub (version à jour)
 
 # ── UTILS ────────────────────────────────────────────────────
 step "Utilitaires"
