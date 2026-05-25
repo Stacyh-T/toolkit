@@ -44,7 +44,7 @@ toolkit/
 │   └── utils/                  # Utilitaires divers
 └── wordlists/
     └── README.md               # Références wordlists (SecLists, rockyou…)
-
+```
 ---
 
 ## 🛠️ Ce qui est installé
@@ -179,4 +179,4 @@ Installées dans `~/wordlists/` via `setup/wordlists.sh` :
 
 ## ⚠️ Disclaimer
 
-Usage **éducatif et légal uniquement**. N'utilise ces outils que sur des systèmes pour lesquels tu as une autorisation explicite.
+Usage **éducatif et légal uniquement**.
