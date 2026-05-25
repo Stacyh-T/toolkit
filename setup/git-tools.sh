@@ -8,6 +8,7 @@
 TOOLS_DIR="$HOME/tools"
 
 ok()   { echo -e "\033[0;32m[✓]\033[0m $1"; }
+skip() { echo -e "\033[0;36m[~]\033[0m $1"; }
 fail() { echo -e "\033[0;31m[✗]\033[0m $1"; }
 step() { echo -e "\n\033[0;36m[*]\033[0m $1"; }
 
@@ -17,13 +18,20 @@ clone_tool() {
   local dest="$TOOLS_DIR/$name"
 
   if [ -d "$dest" ]; then
-    ok "$name déjà présent — mise à jour"
-    git -C "$dest" pull -q
-  else
-    if git clone --depth=1 "$url" "$dest" &>/dev/null; then
-      ok "$name"
+    # Dossier déjà présent — on met juste à jour
+    local changes
+    changes=$(git -C "$dest" pull -q 2>&1)
+    if echo "$changes" | grep -q "Already up to date"; then
+      skip "$name (déjà à jour — ignoré)"
     else
-      fail "$name (échec clone)"
+      ok "$name (mis à jour)"
+    fi
+  else
+    # Nouveau — on clone
+    if git clone --depth=1 "$url" "$dest" &>/dev/null; then
+      ok "$name (installé)"
+    else
+      fail "$name (échec clone — vérifie l'URL ou ta connexion)"
     fi
   fi
 }
