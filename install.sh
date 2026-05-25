@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ============================================================
-#   TOOLKIT INSTALLER
+#   TOOLKIT INSTALLER (Version Verbeuse)
 #   Compatible: Kali Linux / Parrot OS
 #   Usage: ./install.sh
 # ============================================================
@@ -41,10 +41,11 @@ banner() {
   echo ""
 }
 
-step() { echo -e "\n${CYAN}[*]${NC} $1"; }
-ok()   { echo -e "${GREEN}[✓]${NC} $1"; }
-warn() { echo -e "${YELLOW}[!]${NC} $1"; }
-fail() { echo -e "${RED}[✗]${NC} $1"; }
+step() { echo -e "\n${CYAN}[*] ========================================${NC}\n${CYAN}[*] ÉTAPE : $1${NC}\n${CYAN}[*] ========================================${NC}"; }
+ok()   { echo -e "${GREEN}[✓] Succès : $1${NC}"; }
+warn() { echo -e "${YELLOW}[!] Avertissement : $1${NC}"; }
+fail() { echo -e "${RED}[✗] Erreur : $1${NC}"; }
+info() { echo -e "${YELLOW}[>] $1${NC}"; }
 
 # ── Résumé espace disque ─────────────────────────────────────
 show_size_summary() {
@@ -100,14 +101,19 @@ check_root() {
 install_category_apt() {
   local category="$1"
   local tools=("${@:2}")
-  step "apt — $category"
+  step "Installation APT — $category"
   for tool in "${tools[@]}"; do
     if command -v "$tool" &>/dev/null || dpkg -s "$tool" &>/dev/null 2>&1; then
-      echo -e "\033[0;36m[~]\033[0m $tool (déjà installé — ignoré)"
+      echo -e "\033[0;36m[~]\033[0m L'outil '$tool' est déjà installé — ignoré."
     else
-      apt-get install -y "$tool" &>/dev/null \
-        && ok "$tool installé" \
-        || fail "$tool (échec)"
+      info "Installation de '$tool' via APT..."
+      # Retrait du &>/dev/null pour voir la sortie réelle d'APT
+      apt-get install -y "$tool"
+      if [ $? -eq 0 ]; then
+        ok "'$tool' installé avec succès."
+      else
+        fail "Échec de l'installation pour '$tool'."
+      fi
     fi
   done
 }
@@ -117,24 +123,30 @@ install_category_github() {
   local category="$1"
   shift
   local pairs=("$@")   # format : "nom|url" "nom|url" ...
-  step "GitHub — $category"
+  step "Installation GitHub — $category"
   for pair in "${pairs[@]}"; do
     local name="${pair%%|*}"
     local url="${pair##*|}"
     local dest="$HOME/tools/$name"
     mkdir -p "$HOME/tools"
     if [ -d "$dest" ]; then
-      local changes
-      changes=$(git -C "$dest" pull -q 2>&1)
-      if echo "$changes" | grep -q "Already up to date"; then
-        echo -e "\033[0;36m[~]\033[0m $name (déjà à jour — ignoré)"
+      info "Vérification des mises à jour pour le dépôt '$name'..."
+      # Retrait du mode silencieux (-q et &>/dev/null) pour voir les logs Git
+      git -C "$dest" pull
+      if [ $? -eq 0 ]; then
+        ok "'$name' mis à jour ou déjà à jour."
       else
-        ok "$name (mis à jour)"
+        fail "Erreur lors du pull pour '$name'."
       fi
     else
-      git clone --depth=1 "$url" "$dest" &>/dev/null \
-        && ok "$name (installé)" \
-        || fail "$name (échec clone)"
+      info "Clonage de '$name' depuis $url..."
+      # Retrait du &>/dev/null pour voir la progression du clonage
+      git clone --depth=1 "$url" "$dest"
+      if [ $? -eq 0 ]; then
+        ok "'$name' cloné avec succès dans $dest."
+      else
+        fail "Échec du clonage pour '$name'."
+      fi
     fi
   done
 }
@@ -144,9 +156,9 @@ run_step() {
   local script="$2"
   step "$label"
   if bash "$TOOLKIT_DIR/$script"; then
-    ok "$label terminé"
+    ok "Script $label terminé."
   else
-    fail "$label a échoué — vérifie $script"
+    fail "Le script $label a échoué — vérifie $script"
   fi
 }
 
@@ -201,7 +213,9 @@ category_menu() {
   read -rp "  Tes choix : " -a choices
   echo ""
 
-  apt-get update -qq
+  # Retrait de -qq pour voir l'avancement de l'update
+  info "Mise à jour des dépôts APT..."
+  apt-get update
 
   for c in "${choices[@]}"; do
     case $c in
@@ -293,10 +307,26 @@ install_exploit() {
 install_utils() {
   install_category_apt "Utilitaires" \
     tmux git python3-pip jq wget unzip
+
+  info "Configuration d'alias pratiques (.bashrc / .zshrc)..."
+  
+  # Ajout de l'alias global pour charger Burp Suite Pro avec sa licence en persistant
+  local alias_cmd="alias burpsuitepro='java -jar /usr/share/burpsuite/burpsuite.jar --config-file=\$HOME/.burp_pro_license.json'"
+  
+  if [ -f "$HOME/.zshrc" ] && ! grep -q "alias burpsuitepro" "$HOME/.zshrc"; then
+    echo "$alias_cmd" >> "$HOME/.zshrc"
+    ok "Alias 'burpsuitepro' ajouté au .zshrc"
+  fi
+  
+  if [ -f "$HOME/.bashrc" ] && ! grep -q "alias burpsuitepro" "$HOME/.bashrc"; then
+    echo "$alias_cmd" >> "$HOME/.bashrc"
+    ok "Alias 'burpsuitepro' ajouté au .bashrc"
+  fi
 }
 
 install_all() {
-  apt-get update -qq
+  info "Mise à jour des dépôts APT..."
+  apt-get update
   install_recon
   install_web
   install_network
