@@ -13,7 +13,7 @@ ping -c 3 github.com
 df -h ~               # il faut ~3 Go libres
 
 # 2. Clone et installe
-git clone https://github.com/ton-user/toolkit.git ~/toolkit
+git clone https://github.com/Stacyh-T/toolkit.git ~/toolkit
 cd ~/toolkit
 chmod +x install.sh setup/*.sh scripts/*.sh
 sudo ./install.sh
