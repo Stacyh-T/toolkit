@@ -93,9 +93,33 @@ run_step() {
   fi
 }
 
+# ── Résumé tailles ───────────────────────────────────────────
+show_size_summary() {
+  local available_mb
+  available_mb=$(df -m "$HOME" | awk 'NR==2 {print $4}')
+  local available_gb=$(( available_mb / 1024 ))
+  local total=$(( SIZE_APT + SIZE_GITHUB + SIZE_WORDLISTS + SIZE_CONFIGS ))
+  local total_gb=$(( total / 1024 ))
+
+  echo -e "${CYAN}  ┌─────────────────────────────────────────────┐${NC}"
+  echo -e "${CYAN}  │           Taille estimée du toolkit         │${NC}"
+  echo -e "${CYAN}  ├──────────────────────────────┬──────────────┤${NC}"
+  echo -e "${CYAN}  │${NC}  Outils apt                  ${CYAN}│${NC} ${YELLOW}~${SIZE_APT} Mo${NC}       ${CYAN}│${NC}"
+  echo -e "${CYAN}  │${NC}  Outils GitHub               ${CYAN}│${NC} ${YELLOW}~${SIZE_GITHUB} Mo${NC}       ${CYAN}│${NC}"
+  echo -e "${CYAN}  │${NC}  Wordlists (SecLists+rockyou)${CYAN}│${NC} ${YELLOW}~${SIZE_WORDLISTS} Mo${NC}      ${CYAN}│${NC}"
+  echo -e "${CYAN}  │${NC}  Configs (dotfiles)          ${CYAN}│${NC} ${YELLOW}~${SIZE_CONFIGS} Mo${NC}         ${CYAN}│${NC}"
+  echo -e "${CYAN}  ├──────────────────────────────┼──────────────┤${NC}"
+  echo -e "${CYAN}  │${NC}  ${GREEN}TOTAL${NC}                        ${CYAN}│${NC} ${GREEN}~${total} Mo (~${total_gb} Go)${NC}${CYAN}│${NC}"
+  echo -e "${CYAN}  ├──────────────────────────────┼──────────────┤${NC}"
+  echo -e "${CYAN}  │${NC}  Disponible sur $HOME       ${CYAN}│${NC} ${GREEN}~${available_mb} Mo (~${available_gb} Go)${NC}${CYAN}│${NC}"
+  echo -e "${CYAN}  └──────────────────────────────┴──────────────┘${NC}"
+  echo ""
+}
+
 # ── MAIN ─────────────────────────────────────────────────────
 banner
 check_root
+show_size_summary
 
 echo "  Que veux-tu installer ?"
 echo ""
