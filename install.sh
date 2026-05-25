@@ -10,17 +10,18 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
+BOLD='\033[1m'
 NC='\033[0m'
 
 TOOLKIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # ── Taille moyenne par outil (ajustable) ─────────────────────
-AVG_APT_MB=25       # Mo moyen par outil apt
-AVG_GITHUB_MB=20    # Mo moyen par repo GitHub cloné
-SIZE_WORDLISTS=1200 # Fixe : SecLists (~1Go) + rockyou (~200Mo)
-SIZE_CONFIGS=1      # Fixe : dotfiles, négligeable
+AVG_APT_MB=25
+AVG_GITHUB_MB=20
+SIZE_WORDLISTS=1200
+SIZE_CONFIGS=1
 
-# ── Calcul dynamique selon le contenu des scripts ────────────
+# ── Calcul dynamique ─────────────────────────────────────────
 NB_APT=$(grep -c "install_apt" "$TOOLKIT_DIR/setup/apt-tools.sh" 2>/dev/null || echo 0)
 NB_GITHUB=$(grep -c "clone_tool" "$TOOLKIT_DIR/setup/git-tools.sh" 2>/dev/null || echo 0)
 SIZE_APT=$(( NB_APT * AVG_APT_MB ))
@@ -45,7 +46,7 @@ ok()   { echo -e "${GREEN}[✓]${NC} $1"; }
 warn() { echo -e "${YELLOW}[!]${NC} $1"; }
 fail() { echo -e "${RED}[✗]${NC} $1"; }
 
-# ── Résumé tailles (dynamique) ───────────────────────────────
+# ── Résumé espace disque ─────────────────────────────────────
 show_size_summary() {
   local available_mb
   available_mb=$(df -m "$HOME" | awk 'NR==2 {print $4}')
@@ -56,8 +57,8 @@ show_size_summary() {
   echo -e "${CYAN}  ┌──────────────────────────────────────────────────┐${NC}"
   echo -e "${CYAN}  │            Taille estimée du toolkit             │${NC}"
   echo -e "${CYAN}  ├────────────────────────────────┬─────────────────┤${NC}"
-  echo -e "${CYAN}  │${NC}  Outils apt   (${NB_APT} outils x ${AVG_APT_MB}Mo)   ${CYAN}│${NC} ${YELLOW}~${SIZE_APT} Mo${NC}          ${CYAN}│${NC}"
-  echo -e "${CYAN}  │${NC}  Outils GitHub (${NB_GITHUB} repos x ${AVG_GITHUB_MB}Mo)    ${CYAN}│${NC} ${YELLOW}~${SIZE_GITHUB} Mo${NC}          ${CYAN}│${NC}"
+  echo -e "${CYAN}  │${NC}  Outils apt   (${NB_APT} x ${AVG_APT_MB}Mo)          ${CYAN}│${NC} ${YELLOW}~${SIZE_APT} Mo${NC}          ${CYAN}│${NC}"
+  echo -e "${CYAN}  │${NC}  Outils GitHub (${NB_GITHUB} x ${AVG_GITHUB_MB}Mo)         ${CYAN}│${NC} ${YELLOW}~${SIZE_GITHUB} Mo${NC}          ${CYAN}│${NC}"
   echo -e "${CYAN}  │${NC}  Wordlists (SecLists + rockyou)  ${CYAN}│${NC} ${YELLOW}~${SIZE_WORDLISTS} Mo${NC}         ${CYAN}│${NC}"
   echo -e "${CYAN}  │${NC}  Configs (dotfiles)              ${CYAN}│${NC} ${YELLOW}~${SIZE_CONFIGS} Mo${NC}           ${CYAN}│${NC}"
   echo -e "${CYAN}  ├────────────────────────────────┼─────────────────┤${NC}"
@@ -71,32 +72,19 @@ show_size_summary() {
 # ── Vérification espace disque ───────────────────────────────
 check_disk_space() {
   local required_mb="$1"
-  local label="$2"
   local available_mb
   available_mb=$(df -m "$HOME" | awk 'NR==2 {print $4}')
-  local available_gb=$(( available_mb / 1024 ))
-  local required_gb=$(( required_mb / 1024 ))
-
-  echo ""
-  echo -e "${CYAN}  ┌─────────────────────────────────────────┐${NC}"
-  echo -e "${CYAN}  │         Vérification espace disque      │${NC}"
-  echo -e "${CYAN}  ├─────────────────────────────────────────┤${NC}"
-  echo -e "${CYAN}  │${NC} Composants  : ${YELLOW}${label}${NC}"
-  echo -e "${CYAN}  │${NC} Requis      : ${YELLOW}~${required_mb} Mo (~${required_gb} Go)${NC}"
-  echo -e "${CYAN}  │${NC} Disponible  : ${GREEN}${available_mb} Mo (~${available_gb} Go)${NC} sur $HOME"
-  echo -e "${CYAN}  └─────────────────────────────────────────┘${NC}"
-  echo ""
 
   if [ "$available_mb" -lt "$required_mb" ]; then
-    fail "Espace insuffisant ! Il te faut ~${required_mb} Mo mais tu n'as que ${available_mb} Mo."
+    fail "Espace insuffisant ! Requis : ~${required_mb} Mo — Disponible : ${available_mb} Mo."
     fail "Libère de l'espace ou choisis une installation partielle."
     exit 1
   elif [ "$available_mb" -lt $(( required_mb * 2 )) ]; then
-    warn "Espace limite. L'installation devrait passer mais c'est juste."
+    warn "Espace limite (~${available_mb} Mo disponible pour ~${required_mb} Mo requis)."
     read -rp "  Continuer quand même ? [o/N] : " confirm
     [[ "$confirm" =~ ^[oO]$ ]] || exit 0
   else
-    ok "Espace suffisant. On continue."
+    ok "Espace suffisant (${available_mb} Mo disponible)."
   fi
 }
 
@@ -106,6 +94,49 @@ check_root() {
     warn "Relance avec: sudo ./install.sh"
     echo ""
   fi
+}
+
+# ── Installation par catégorie (apt) ─────────────────────────
+install_category_apt() {
+  local category="$1"
+  local tools=("${@:2}")
+  step "apt — $category"
+  for tool in "${tools[@]}"; do
+    if command -v "$tool" &>/dev/null || dpkg -s "$tool" &>/dev/null 2>&1; then
+      echo -e "\033[0;36m[~]\033[0m $tool (déjà installé — ignoré)"
+    else
+      apt-get install -y "$tool" &>/dev/null \
+        && ok "$tool installé" \
+        || fail "$tool (échec)"
+    fi
+  done
+}
+
+# ── Installation par catégorie (GitHub) ──────────────────────
+install_category_github() {
+  local category="$1"
+  shift
+  local pairs=("$@")   # format : "nom|url" "nom|url" ...
+  step "GitHub — $category"
+  for pair in "${pairs[@]}"; do
+    local name="${pair%%|*}"
+    local url="${pair##*|}"
+    local dest="$HOME/tools/$name"
+    mkdir -p "$HOME/tools"
+    if [ -d "$dest" ]; then
+      local changes
+      changes=$(git -C "$dest" pull -q 2>&1)
+      if echo "$changes" | grep -q "Already up to date"; then
+        echo -e "\033[0;36m[~]\033[0m $name (déjà à jour — ignoré)"
+      else
+        ok "$name (mis à jour)"
+      fi
+    else
+      git clone --depth=1 "$url" "$dest" &>/dev/null \
+        && ok "$name (installé)" \
+        || fail "$name (échec clone)"
+    fi
+  done
 }
 
 run_step() {
@@ -119,44 +150,169 @@ run_step() {
   fi
 }
 
+# ── Menu principal ────────────────────────────────────────────
+main_menu() {
+  echo -e "${BOLD}  Que veux-tu installer ?${NC}"
+  echo ""
+  echo -e "  [1] ${GREEN}Tout${NC}                    ~$(( SIZE_APT + SIZE_GITHUB + SIZE_WORDLISTS + SIZE_CONFIGS )) Mo"
+  echo -e "  [2] ${CYAN}Par catégorie${NC}           Choisir les thèmes"
+  echo -e "  [3] ${YELLOW}Wordlists${NC}               ~${SIZE_WORDLISTS} Mo"
+  echo -e "  [4] ${YELLOW}Configs${NC}                 ~${SIZE_CONFIGS} Mo  (.zshrc, tmux)"
+  echo ""
+  read -rp "  Choix [1-4] : " choice
+  echo ""
+
+  case $choice in
+    1)
+      check_disk_space $(( SIZE_APT + SIZE_GITHUB + SIZE_WORDLISTS + SIZE_CONFIGS ))
+      install_all
+      run_step "Wordlists"  "setup/wordlists.sh"
+      run_step "Configs"    "setup/configs.sh"
+      ;;
+    2) category_menu ;;
+    3)
+      check_disk_space "$SIZE_WORDLISTS"
+      run_step "Wordlists" "setup/wordlists.sh"
+      ;;
+    4)
+      check_disk_space "$SIZE_CONFIGS"
+      run_step "Configs" "setup/configs.sh"
+      ;;
+    *) fail "Choix invalide."; exit 1 ;;
+  esac
+}
+
+# ── Menu par catégorie ────────────────────────────────────────
+category_menu() {
+  echo -e "${BOLD}  Choisis les catégories à installer :${NC}"
+  echo -e "  ${CYAN}(plusieurs choix possibles, ex: 1 3 5)${NC}"
+  echo ""
+  echo "  [1]  Recon & OSINT"
+  echo "  [2]  Web Security"
+  echo "  [3]  Network"
+  echo "  [4]  Password Cracking"
+  echo "  [5]  Post-Exploitation"
+  echo "  [6]  Pivoting & Tunneling"
+  echo "  [7]  Forensics"
+  echo "  [8]  Exploit (Metasploit)"
+  echo "  [9]  Utilitaires (tmux, git, jq…)"
+  echo "  [0]  Wordlists + Configs"
+  echo ""
+  read -rp "  Tes choix : " -a choices
+  echo ""
+
+  apt-get update -qq
+
+  for c in "${choices[@]}"; do
+    case $c in
+      1) install_recon ;;
+      2) install_web ;;
+      3) install_network ;;
+      4) install_passwords ;;
+      5) install_postexploit ;;
+      6) install_pivoting ;;
+      7) install_forensics ;;
+      8) install_exploit ;;
+      9) install_utils ;;
+      0)
+        run_step "Wordlists" "setup/wordlists.sh"
+        run_step "Configs"   "setup/configs.sh"
+        ;;
+      *) warn "Catégorie '$c' inconnue — ignorée" ;;
+    esac
+  done
+}
+
+# ── Définition des catégories ─────────────────────────────────
+
+install_recon() {
+  install_category_apt "Recon & OSINT" \
+    nmap amass recon-ng maltego sherlock dnsenum whatweb exiftool
+  install_category_github "Recon & OSINT" \
+    "spiderfoot|https://github.com/smicallef/spiderfoot" \
+    "datasploit|https://github.com/DataSploit/datasploit" \
+    "photon|https://github.com/s0md3v/Photon" \
+    "social-analyzer|https://github.com/qeeqbox/social-analyzer"
+}
+
+install_web() {
+  install_category_apt "Web Security" \
+    ffuf gobuster feroxbuster nikto curl dirb wfuzz sqlmap wafw00f
+  install_category_github "Web Security" \
+    "xsstrike|https://github.com/s0md3v/XSStrike" \
+    "brutexss|https://github.com/rajeshmajumdar/BruteXSS" \
+    "gopherus|https://github.com/tarunkant/Gopherus" \
+    "drupwn|https://github.com/immunIT/drupwn" \
+    "droopescan|https://github.com/SamJoan/droopescan"
+}
+
+install_network() {
+  install_category_apt "Network" \
+    netcat-traditional hydra enum4linux nbtscan onesixtyone snmp macchanger wireshark tcpdump
+  install_category_github "Network" \
+    "impacket|https://github.com/fortra/impacket" \
+    "smtp-user-enum|https://github.com/cytopia/smtp-user-enum" \
+    "svmap|https://github.com/EnableSecurity/sipvicious"
+}
+
+install_passwords() {
+  install_category_apt "Password Cracking" \
+    hashcat john crunch
+}
+
+install_postexploit() {
+  install_category_github "Post-Exploitation" \
+    "PEASS-ng|https://github.com/peass-ng/PEASS-ng" \
+    "pwncat|https://github.com/calebstewart/pwncat" \
+    "evil-winrm|https://github.com/Hackplayers/evil-winrm" \
+    "mimikatz|https://github.com/gentilkiwi/mimikatz" \
+    "crackmapexec|https://github.com/byt3bl33d3r/CrackMapExec" \
+    "bashfuscator|https://github.com/Bashfuscator/Bashfuscator"
+}
+
+install_pivoting() {
+  install_category_github "Pivoting & Tunneling" \
+    "chisel|https://github.com/jpillora/chisel" \
+    "ligolo-ng|https://github.com/nicocha30/ligolo-ng" \
+    "proxychains-ng|https://github.com/rofl0r/proxychains-ng" \
+    "sshuttle|https://github.com/sshuttle/sshuttle"
+}
+
+install_forensics() {
+  install_category_github "Forensics" \
+    "autopsy|https://github.com/sleuthkit/autopsy" \
+    "volatility3|https://github.com/volatilityfoundation/volatility3" \
+    "plaso|https://github.com/log2timeline/plaso"
+}
+
+install_exploit() {
+  install_category_apt "Exploit" \
+    metasploit-framework
+}
+
+install_utils() {
+  install_category_apt "Utilitaires" \
+    tmux git python3-pip jq wget unzip
+}
+
+install_all() {
+  apt-get update -qq
+  install_recon
+  install_web
+  install_network
+  install_passwords
+  install_postexploit
+  install_pivoting
+  install_forensics
+  install_exploit
+  install_utils
+}
+
 # ── MAIN ─────────────────────────────────────────────────────
 banner
 check_root
 show_size_summary
-
-echo "  Que veux-tu installer ?"
-echo ""
-echo -e "  [1] Tout (recommandé)            ${YELLOW}~$(( SIZE_APT + SIZE_GITHUB + SIZE_WORDLISTS + SIZE_CONFIGS )) Mo${NC}"
-echo -e "  [2] Outils apt seulement         ${YELLOW}~${SIZE_APT} Mo${NC}  (${NB_APT} outils)"
-echo -e "  [3] Outils GitHub seulement      ${YELLOW}~${SIZE_GITHUB} Mo${NC}  (${NB_GITHUB} repos)"
-echo -e "  [4] Wordlists seulement          ${YELLOW}~${SIZE_WORDLISTS} Mo${NC}"
-echo -e "  [5] Configs seulement            ${YELLOW}~${SIZE_CONFIGS} Mo${NC}"
-echo ""
-read -rp "  Choix [1-5] : " choice
-
-# Vérification espace selon le choix
-case $choice in
-  1) check_disk_space $(( SIZE_APT + SIZE_GITHUB + SIZE_WORDLISTS + SIZE_CONFIGS )) "apt + GitHub + wordlists + configs" ;;
-  2) check_disk_space "$SIZE_APT"       "outils apt ($NB_APT outils)" ;;
-  3) check_disk_space "$SIZE_GITHUB"    "outils GitHub ($NB_GITHUB repos)" ;;
-  4) check_disk_space "$SIZE_WORDLISTS" "wordlists" ;;
-  5) check_disk_space "$SIZE_CONFIGS"   "configs" ;;
-  *) fail "Choix invalide."; exit 1 ;;
-esac
-
-# Lancement des scripts
-case $choice in
-  1)
-    run_step "Installation outils apt"    "setup/apt-tools.sh"
-    run_step "Clonage outils GitHub"      "setup/git-tools.sh"
-    run_step "Téléchargement wordlists"   "setup/wordlists.sh"
-    run_step "Application des configs"    "setup/configs.sh"
-    ;;
-  2) run_step "Installation outils apt"   "setup/apt-tools.sh" ;;
-  3) run_step "Clonage outils GitHub"     "setup/git-tools.sh" ;;
-  4) run_step "Téléchargement wordlists"  "setup/wordlists.sh" ;;
-  5) run_step "Application des configs"   "setup/configs.sh"   ;;
-esac
+main_menu
 
 echo ""
 echo -e "${GREEN}════════════════════════════════════════${NC}"
