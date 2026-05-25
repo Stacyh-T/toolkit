@@ -1,6 +1,7 @@
 # ⚡ toolkit
 
 > Mon environnement de cybersécurité portable — Kali Linux / Parrot OS.
+> Un `git clone` + `./install.sh` et je suis opérationnel.
 
 ---
 
@@ -13,7 +14,7 @@ ping -c 3 github.com
 df -h ~               # il faut ~3 Go libres
 
 # 2. Clone et installe
-git clone https://github.com/Stacyh-T/toolkit.git ~/toolkit
+git clone https://github.com/ton-user/toolkit.git ~/toolkit
 cd ~/toolkit
 chmod +x install.sh setup/*.sh scripts/*.sh
 sudo ./install.sh
@@ -37,33 +38,29 @@ toolkit/
 │   ├── .zshrc                  # Aliases, fonctions, prompt
 │   └── tmux.conf               # Config tmux (splits, navigation, barre statut)
 ├── scripts/
-│   ├── revshell.sh             # Générateur de reverse shells
+│   ├── revshell.sh             # Générateur de reverse shells (CLI)
 │   ├── recon/                  # Scripts de recon perso
 │   ├── web/                    # Scripts web perso
 │   └── utils/                  # Utilitaires divers
 └── wordlists/
     └── README.md               # Références wordlists (SecLists, rockyou…)
-```
-
-> ⚠️ `~/tools/` et `~/wordlists/` sont créés **sur ta machine** par les scripts — ils ne sont pas dans ce repo.
 
 ---
 
 ## 🛠️ Ce qui est installé
 
-### Via apt (~800 Mo)
+### Via apt
 
 | Catégorie | Outils |
 |---|---|
-| Recon & OSINT | nmap, amass, recon-ng, dnsenum, whatweb, exiftool |
-| Web | ffuf, gobuster, feroxbuster, nikto, curl, dirb, sqlmap, wafw00f |
-| Network | netcat, hydra, enum4linux, nbtscan, wireshark, tcpdump, macchanger |
+| Recon & OSINT | nmap, amass, recon-ng, maltego, sherlock, dnsenum, whatweb, exiftool |
+| Web | ffuf, gobuster, feroxbuster, nikto, curl, dirb, wfuzz, sqlmap, wafw00f |
+| Network | netcat, hydra, enum4linux, nbtscan, onesixtyone, snmp, macchanger, wireshark, tcpdump |
 | Passwords | hashcat, john, crunch |
 | Exploit | metasploit-framework |
-| Forensics | autopsy, volatility3 |
 | Utils | tmux, git, python3-pip, jq, wget, unzip |
 
-### Via GitHub → `~/tools/` (~200 Mo)
+### Via GitHub → `~/tools/`
 
 | Catégorie | Outil | Repo |
 |---|---|---|
@@ -89,6 +86,9 @@ toolkit/
 | Pivoting | Ligolo-ng | https://github.com/nicocha30/ligolo-ng |
 | Pivoting | Proxychains-ng | https://github.com/rofl0r/proxychains-ng |
 | Pivoting | sshuttle | https://github.com/sshuttle/sshuttle |
+| Reverse Shells | revshells | https://github.com/0dayCTF/reverse-shell-generator |
+| Forensics | Autopsy | https://github.com/sleuthkit/autopsy |
+| Forensics | Volatility3 | https://github.com/volatilityfoundation/volatility3 |
 | Forensics | Plaso | https://github.com/log2timeline/plaso |
 
 ---
@@ -97,24 +97,42 @@ toolkit/
 
 ```bash
 # Recon
-nmap-quick <ip>         # nmap -sV -sC -T4
-nmap-full <ip>          # nmap -sV -sC -p-
-nmap-udp <ip>           # nmap -sU -T4
-nmap-vuln <ip>          # nmap --script vuln
+nmap-quick <ip>             # nmap -sV -sC -T4
+nmap-full <ip>              # nmap -sV -sC -p-
+nmap-udp <ip>               # nmap -sU -T4
+nmap-vuln <ip>              # nmap --script vuln
 
 # Web
-ffuf-dir                # ffuf sur directories
-ffuf-sub                # ffuf sur sous-domaines
+ffuf-dir                    # ffuf sur directories (medium)
+ffuf-sub                    # ffuf sur sous-domaines
+gobuster-dir                # gobuster dir avec wordlist medium
+
+# Passwords
+john-rock <hashfile>        # john avec rockyou
+hashcat-rock                # hashcat -a 0 -w 3
+
+# Outils GitHub
+spiderfoot                  # interface web OSINT → http://127.0.0.1:5001
+xsstrike --url <url>        # scanner XSS
+vol -f <mem.dmp> <plugin>   # Volatility3
+secretsdump <domain/user:pass@ip>
+GetNPUsers <domain/> -usersfile users.txt
+linpeas                     # lance linpeas.sh localement
+evil-winrm -i <ip> -u <user> -p <pass>
+ligolo-proxy                # proxy Ligolo sur ta machine
+chisel-server               # chisel en mode serveur
 
 # Utils
-serve                   # python3 -m http.server 8080
-listen <port>           # nc -lvnp <port>
-target <nom>            # Crée workspace/{recon,web,exploit,loot,notes}
-quickscan <ip>          # Scan nmap + sauvegarde automatique
-b64e / b64d             # Encode / décode base64
-urlencode <string>      # URL encode
-myip                    # Affiche ton IP publique
-localip                 # Affiche ton IP locale
+serve                       # python3 -m http.server 8080
+serve-linpeas               # sert linpeas + affiche commande cible
+serve-tool <chemin>         # sert n'importe quel fichier via HTTP
+listen <port>               # nc -lvnp <port>
+target <nom>                # crée workspace/{recon,web,exploit,loot,notes}
+quickscan <ip>              # scan nmap + sauvegarde automatique
+b64e / b64d                 # encode / décode base64
+urlencode <string>          # URL encode
+myip                        # IP publique
+localip                     # IP locale
 ```
 
 ---
@@ -124,7 +142,7 @@ localip                 # Affiche ton IP locale
 ```bash
 chmod +x scripts/revshell.sh
 
-# Affiche tous les shells disponibles
+# Tous les shells disponibles
 ./scripts/revshell.sh <LHOST> <LPORT> all
 
 # Un type spécifique
@@ -134,6 +152,9 @@ chmod +x scripts/revshell.sh
 
 # Upgrade shell basique → TTY interactif
 ./scripts/revshell.sh 10.10.14.1 4444 upgrade
+
+# Générateur web offline (interface navigateur)
+revshells
 ```
 
 Types disponibles : `bash` · `python` · `php` · `netcat` · `perl` · `ruby` · `powershell` · `upgrade` · `all`
@@ -158,4 +179,4 @@ Installées dans `~/wordlists/` via `setup/wordlists.sh` :
 
 ## ⚠️ Disclaimer
 
-Usage **éducatif et légal uniquement**.
+Usage **éducatif et légal uniquement**. N'utilise ces outils que sur des systèmes pour lesquels tu as une autorisation explicite.
