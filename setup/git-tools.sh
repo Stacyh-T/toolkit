@@ -18,7 +18,6 @@ clone_tool() {
   local dest="$TOOLS_DIR/$name"
 
   if [ -d "$dest" ]; then
-    # Dossier déjà présent — on met juste à jour
     local changes
     changes=$(git -C "$dest" pull -q 2>&1)
     if echo "$changes" | grep -q "Already up to date"; then
@@ -27,7 +26,6 @@ clone_tool() {
       ok "$name (mis à jour)"
     fi
   else
-    # Nouveau — on clone
     if git clone --depth=1 "$url" "$dest" &>/dev/null; then
       ok "$name (installé)"
     else
@@ -63,6 +61,22 @@ clone_tool "svmap"             "https://github.com/EnableSecurity/sipvicious"
 # ── POST-EXPLOITATION ────────────────────────────────────────
 step "Post-Exploitation"
 clone_tool "bashfuscator"      "https://github.com/Bashfuscator/Bashfuscator"
+clone_tool "PEASS-ng"          "https://github.com/peass-ng/PEASS-ng"
+clone_tool "pwncat"            "https://github.com/calebstewart/pwncat"
+clone_tool "evil-winrm"        "https://github.com/Hackplayers/evil-winrm"
+clone_tool "mimikatz"          "https://github.com/gentilkiwi/mimikatz"
+clone_tool "crackmapexec"      "https://github.com/byt3bl33d3r/CrackMapExec"
+
+# ── PIVOTING & TUNNELING ──────────────────────────────────────
+step "Pivoting & Tunneling"
+clone_tool "chisel"            "https://github.com/jpillora/chisel"
+clone_tool "ligolo-ng"         "https://github.com/nicocha30/ligolo-ng"
+clone_tool "proxychains-ng"    "https://github.com/rofl0r/proxychains-ng"
+clone_tool "sshuttle"          "https://github.com/sshuttle/sshuttle"
+
+# ── REVERSE SHELLS ────────────────────────────────────────────
+step "Reverse Shells"
+clone_tool "revshells"         "https://github.com/0dayCTF/reverse-shell-generator"
 
 # ── FORENSICS ────────────────────────────────────────────────
 step "Forensics"
