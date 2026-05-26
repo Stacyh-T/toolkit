@@ -211,6 +211,72 @@ seclists/              ← SecLists complet
 | Proxychains-ng | `cd ~/tools/proxychains-ng && ./configure && make && make install` |
 
 ---
+ 
+## ➕ Ajouter un outil
+ 
+### Via apt
+ 
+Ouvre `setup/apt-tools.sh` et ajoute dans la bonne catégorie :
+ 
+```bash
+install_apt nom-outil
+```
+ 
+Puis push et installe :
+ 
+```bash
+git add . && git commit -m "feat: ajout de nom-outil" && git push
+sudo bash setup/apt-tools.sh
+```
+ 
+---
+ 
+### Via GitHub
+ 
+Ouvre `setup/git-tools.sh` et ajoute dans la bonne catégorie :
+ 
+```bash
+clone_tool "nom-outil" "https://github.com/user/repo"
+```
+ 
+Ajoute l'alias dans `configs/.zshrc` :
+ 
+```bash
+alias nom-outil='python3 $TOOLS/nom-outil/main.py'
+```
+ 
+Puis push et installe :
+ 
+```bash
+git add . && git commit -m "feat: ajout de nom-outil" && git push
+sudo bash setup/git-tools.sh
+source ~/.zshrc
+```
+ 
+> 💡 Le calcul de taille dans `install.sh` se met à jour automatiquement — pas besoin de toucher à autre chose.
+ 
+---
+ 
+## 🔄 Mettre à jour le toolkit
+ 
+```bash
+cd ~/toolkit
+git pull
+source ~/.zshrc    # si tu as modifié le .zshrc
+```
+ 
+Pour réinstaller uniquement certains outils :
+ 
+```bash
+sudo bash setup/apt-tools.sh    # outils apt
+sudo bash setup/git-tools.sh    # outils GitHub
+sudo bash setup/wordlists.sh    # wordlists
+sudo bash setup/configs.sh      # environnement zsh
+```
+ 
+> Les outils déjà installés sont automatiquement ignorés `[~]` — pas de réinstallation inutile.
+
+---
 
 ## ⚠️ Disclaimer
 
