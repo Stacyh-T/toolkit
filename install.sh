@@ -3,7 +3,7 @@
 # ============================================================
 #   TOOLKIT INSTALLER
 #   Compatible: Kali Linux / Parrot OS
-#   Usage: ./install.sh
+#   Usage: sudo ./install.sh
 # ============================================================
 
 RED='\033[0;31m'
@@ -14,6 +14,15 @@ BOLD='\033[1m'
 NC='\033[0m'
 
 TOOLKIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# ── Résolution du vrai utilisateur ───────────────────────────
+# Si lancé via sudo → récupère le user réel
+# Si lancé directement → utilise $USER
+REAL_USER="${SUDO_USER:-$USER}"
+REAL_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)
+
+export REAL_USER
+export REAL_HOME
 
 # ── Taille moyenne par outil (ajustable) ─────────────────────
 AVG_APT_MB=25
@@ -38,6 +47,7 @@ banner() {
   echo "     ╚═╝    ╚═════╝  ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝   ╚═╝   "
   echo -e "${NC}"
   echo -e "${YELLOW}  Cybersecurity Toolkit Installer — Kali/Parrot${NC}"
+  echo -e "${CYAN}  Utilisateur détecté : ${GREEN}$REAL_USER${NC} ${CYAN}(home: ${GREEN}$REAL_HOME${NC}${CYAN})${NC}"
   echo ""
 }
 
@@ -50,31 +60,24 @@ info() { echo -e "${YELLOW}[>] $1${NC}"; }
 # ── Résumé espace disque ─────────────────────────────────────
 show_size_summary() {
   local available_mb
-  available_mb=$(df -m "$HOME" | awk 'NR==2 {print $4}')
+  available_mb=$(df -m "$REAL_HOME" | awk 'NR==2 {print $4}')
   local available_gb=$(( available_mb / 1024 ))
   local total=$(( SIZE_APT + SIZE_GITHUB + SIZE_WORDLISTS + SIZE_CONFIGS ))
   local total_gb=$(( total / 1024 ))
 
-  # La colonne de droite est agrandie à 22 caractères (au lieu de 15) pour contenir les gros chiffres
   local l_apt=$(printf "%-30s" "Outils apt   (${NB_APT} x ${AVG_APT_MB}Mo)")
   local v_apt=$(printf "%-22s" "~${SIZE_APT} Mo")
-
   local l_git=$(printf "%-30s" "Outils GitHub (${NB_GITHUB} x ${AVG_GITHUB_MB}Mo)")
   local v_git=$(printf "%-22s" "~${SIZE_GITHUB} Mo")
-
   local l_wrd=$(printf "%-30s" "Wordlists (SecLists+rockyou)")
   local v_wrd=$(printf "%-22s" "~${SIZE_WORDLISTS} Mo")
-
   local l_cfg=$(printf "%-30s" "Configs (dotfiles)")
   local v_cfg=$(printf "%-22s" "~${SIZE_CONFIGS} Mo")
-
   local l_tot=$(printf "%-30s" "TOTAL")
   local v_tot=$(printf "%-22s" "~${total} Mo (~${total_gb} Go)")
-
-  local l_dis=$(printf "%-30s" "Disponible sur $HOME")
+  local l_dis=$(printf "%-30s" "Disponible sur $REAL_HOME")
   local v_dis=$(printf "%-22s" "~${available_mb} Mo (~${available_gb} Go)")
 
-  # Le tableau est élargi avec 32 tirets à gauche, 24 à droite (57 au total pour le haut/bas)
   echo -e "${CYAN}  ┌─────────────────────────────────────────────────────────┐${NC}"
   echo -e "${CYAN}  │                Taille estimée du toolkit                │${NC}"
   echo -e "${CYAN}  ├────────────────────────────────┬────────────────────────┤${NC}"
@@ -89,11 +92,12 @@ show_size_summary() {
   echo -e "${CYAN}  └────────────────────────────────┴────────────────────────┘${NC}"
   echo ""
 }
+
 # ── Vérification espace disque ───────────────────────────────
 check_disk_space() {
   local required_mb="$1"
   local available_mb
-  available_mb=$(df -m "$HOME" | awk 'NR==2 {print $4}')
+  available_mb=$(df -m "$REAL_HOME" | awk 'NR==2 {print $4}')
 
   if [ "$available_mb" -lt "$required_mb" ]; then
     fail "Espace insuffisant ! Requis : ~${required_mb} Mo — Disponible : ${available_mb} Mo."
@@ -126,7 +130,6 @@ install_category_apt() {
       echo -e "\033[0;36m[~]\033[0m L'outil '$tool' est déjà installé — ignoré."
     else
       info "Installation de '$tool' via APT..."
-      # Retrait du &>/dev/null pour voir la sortie réelle d'APT
       apt-get install -y "$tool"
       if [ $? -eq 0 ]; then
         ok "'$tool' installé avec succès."
@@ -141,16 +144,15 @@ install_category_apt() {
 install_category_github() {
   local category="$1"
   shift
-  local pairs=("$@")   # format : "nom|url" "nom|url" ...
+  local pairs=("$@")
   step "Installation GitHub — $category"
   for pair in "${pairs[@]}"; do
     local name="${pair%%|*}"
     local url="${pair##*|}"
-    local dest="$HOME/tools/$name"
-    mkdir -p "$HOME/tools"
+    local dest="$REAL_HOME/tools/$name"
+    mkdir -p "$REAL_HOME/tools"
     if [ -d "$dest" ]; then
-      info "Vérification des mises à jour pour le dépôt '$name'..."
-      # Retrait du mode silencieux (-q et &>/dev/null) pour voir les logs Git
+      info "Vérification des mises à jour pour '$name'..."
       git -C "$dest" pull
       if [ $? -eq 0 ]; then
         ok "'$name' mis à jour ou déjà à jour."
@@ -159,10 +161,10 @@ install_category_github() {
       fi
     else
       info "Clonage de '$name' depuis $url..."
-      # Retrait du &>/dev/null pour voir la progression du clonage
       git clone --depth=1 "$url" "$dest"
       if [ $? -eq 0 ]; then
-        ok "'$name' cloné avec succès dans $dest."
+        ok "'$name' cloné dans $dest."
+        chown -R "$REAL_USER":"$REAL_USER" "$dest"
       else
         fail "Échec du clonage pour '$name'."
       fi
@@ -232,7 +234,6 @@ category_menu() {
   read -rp "  Tes choix : " -a choices
   echo ""
 
-  # Retrait de -qq pour voir l'avancement de l'update
   info "Mise à jour des dépôts APT..."
   apt-get update
 
@@ -270,7 +271,7 @@ install_recon() {
 
 install_web() {
   install_category_apt "Web Security" \
-    ffuf gobuster feroxbuster nikto curl dirb wfuzz sqlmap wafw00f
+    burpsuite zaproxy ffuf gobuster feroxbuster nikto curl dirb wfuzz sqlmap wafw00f
   install_category_github "Web Security" \
     "xsstrike|https://github.com/s0md3v/XSStrike" \
     "brutexss|https://github.com/rajeshmajumdar/BruteXSS" \
@@ -326,21 +327,6 @@ install_exploit() {
 install_utils() {
   install_category_apt "Utilitaires" \
     tmux git python3-pip jq wget unzip
-
-  info "Configuration d'alias pratiques (.bashrc / .zshrc)..."
-  
-  # Ajout de l'alias global pour charger Burp Suite Pro avec sa licence en persistant
-  local alias_cmd="alias burpsuitepro='java -jar /usr/share/burpsuite/burpsuite.jar --config-file=\$HOME/.burp_pro_license.json'"
-  
-  if [ -f "$HOME/.zshrc" ] && ! grep -q "alias burpsuitepro" "$HOME/.zshrc"; then
-    echo "$alias_cmd" >> "$HOME/.zshrc"
-    ok "Alias 'burpsuitepro' ajouté au .zshrc"
-  fi
-  
-  if [ -f "$HOME/.bashrc" ] && ! grep -q "alias burpsuitepro" "$HOME/.bashrc"; then
-    echo "$alias_cmd" >> "$HOME/.bashrc"
-    ok "Alias 'burpsuitepro' ajouté au .bashrc"
-  fi
 }
 
 install_all() {
@@ -365,6 +351,7 @@ main_menu
 
 echo ""
 echo -e "${GREEN}════════════════════════════════════════${NC}"
-echo -e "${GREEN}  Toolkit prêt !${NC}"
+echo -e "${GREEN}  Toolkit prêt. Bonne chasse. 🎯${NC}"
+echo -e "${GREEN}  Outils dans : $REAL_HOME/tools/${NC}"
 echo -e "${GREEN}════════════════════════════════════════${NC}"
 echo ""
