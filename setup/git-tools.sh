@@ -5,12 +5,16 @@
 #   Clone les outils non disponibles via apt
 # ============================================================
 
-TOOLS_DIR="$HOME/tools"
+# Récupère le vrai home (passé depuis install.sh ou recalculé)
+REAL_USER="${REAL_USER:-${SUDO_USER:-$USER}}"
+REAL_HOME="${REAL_HOME:-$(getent passwd "$REAL_USER" | cut -d: -f6)}"
+TOOLS_DIR="$REAL_HOME/tools"
 
 ok()   { echo -e "\033[0;32m[✓]\033[0m $1"; }
 skip() { echo -e "\033[0;36m[~]\033[0m $1"; }
 fail() { echo -e "\033[0;31m[✗]\033[0m $1"; }
 step() { echo -e "\n\033[0;36m[*]\033[0m $1"; }
+info() { echo -e "\033[1;33m[>]\033[0m $1"; }
 
 clone_tool() {
   local name="$1"
@@ -26,8 +30,10 @@ clone_tool() {
       ok "$name (mis à jour)"
     fi
   else
-    if git clone --depth=1 "$url" "$dest" &>/dev/null; then
-      ok "$name (installé)"
+    info "Clonage de '$name'..."
+    if git clone --depth=1 "$url" "$dest"; then
+      chown -R "$REAL_USER":"$REAL_USER" "$dest"
+      ok "$name (installé dans $dest)"
     else
       fail "$name (échec clone — vérifie l'URL ou ta connexion)"
     fi
@@ -35,6 +41,7 @@ clone_tool() {
 }
 
 mkdir -p "$TOOLS_DIR"
+chown "$REAL_USER":"$REAL_USER" "$TOOLS_DIR"
 step "Clonage des outils dans $TOOLS_DIR"
 
 # ── RECON & OSINT ────────────────────────────────────────────
