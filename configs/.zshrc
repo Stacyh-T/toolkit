@@ -8,6 +8,13 @@ export PATH="$HOME/.local/bin:$HOME/tools:$PATH"
 export WORDLISTS="$HOME/wordlists"
 export TOOLS="$HOME/tools"
 
+# ── PROMPT (différent selon root ou user normal) ──────────────
+if [ "$EUID" -eq 0 ]; then
+  PROMPT="%F{red}[ROOT@%m]%f %F{yellow}%~%f # "
+else
+  PROMPT="%F{red}[%f%F{yellow}%n%f%F{red}@%f%F{cyan}%m%f%F{red}]%f %F{green}%~%f %% "
+fi
+
 # ── ALIASES GÉNÉRAUX ─────────────────────────────────────────
 alias ll='ls -lah --color=auto'
 alias cls='clear'
@@ -207,5 +214,4 @@ b64d() { echo -n "$1" | base64 -d; }
 # URL encode
 urlencode() { python3 -c "import urllib.parse; print(urllib.parse.quote('$1'))"; }
 
-# ── PROMPT ────────────────────────────────────────────────────
-PROMPT='%F{red}[%f%F{yellow}%n%f%F{red}@%f%F{cyan}%m%f%F{red}]%f %F{green}%~%f %# '
+
