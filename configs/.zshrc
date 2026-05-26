@@ -216,3 +216,8 @@ b64d() { echo -n "$1" | base64 -d; }
 urlencode() { python3 -c "import urllib.parse; print(urllib.parse.quote('$1'))"; }
 
 
+
+# ── ZSH SYNTAX HIGHLIGHTING ──────────────────────────────────
+# Commande verte = reconnue, rouge = inconnue
+[ -f /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ] && \
+  source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
