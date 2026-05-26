@@ -16,7 +16,8 @@ else
 fi
 
 # ── ALIASES GÉNÉRAUX ─────────────────────────────────────────
-alias ll='ls -lah --color=auto'
+alias ls='ls --color=auto'       # couleurs pour ls
+alias ll='ls -lah --color=auto'  # ls détaillé avec couleurs
 alias cls='clear'
 alias myip='curl -s ifconfig.me && echo'
 alias localip="ip -br a | grep UP | awk '{print \$3}'"
