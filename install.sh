@@ -351,7 +351,7 @@ main_menu
 
 echo ""
 echo -e "${GREEN}════════════════════════════════════════${NC}"
-echo -e "${GREEN}  Toolkit prêt. Bonne chasse. 🎯${NC}"
+echo -e "${GREEN}  Toolkit prêt.${NC}"
 echo -e "${GREEN}  Outils dans : $REAL_HOME/tools/${NC}"
 echo -e "${GREEN}════════════════════════════════════════${NC}"
 echo ""
