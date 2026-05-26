@@ -12,7 +12,7 @@ ping -c 3 github.com
 df -h ~               # prévoir ~3 Go libres minimum
 
 # Installation
-git clone https://github.com/ton-user/toolkit.git ~/toolkit
+git clone https://github.com/Stacyh-T/toolkit.git ~/toolkit
 cd ~/toolkit
 chmod +x install.sh setup/*.sh scripts/*.sh
 sudo ./install.sh
