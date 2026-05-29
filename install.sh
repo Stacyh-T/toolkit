@@ -6,10 +6,10 @@
 #   Usage: sudo ./install.sh
 # ============================================================
 
-RED='\033[0;31m'         # ← garder rouge pour les erreurs (lisibilité)
-GREEN='\033[1;35m'       # ← rose clair  (succès ✓)
-YELLOW='\033[0;35m'      # ← rose        (warnings, info)
-CYAN='\033[1;34m'        # ← bleu clair  (headers, steps, banner)
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m'
 
@@ -145,33 +145,21 @@ check_root() {
 install_category_apt() {
   local category="$1"
   local tools=("${@:2}")
-  local to_install=() # Notre "panier" pour les paquets manquants
-
   step "Installation APT — $category"
   apt_update
-
-  # 1. On trie les outils : déjà installés vs à installer
   for tool in "${tools[@]}"; do
     if command -v "$tool" &>/dev/null || dpkg -s "$tool" &>/dev/null 2>&1; then
       echo -e "\033[0;36m[~]\033[0m L'outil '$tool' est déjà installé — ignoré."
     else
-      to_install+=("$tool")
+      info "Installation de '$tool' via APT..."
+      apt-get install -y "$tool"
+      if [ $? -eq 0 ]; then
+        ok "'$tool' installé avec succès."
+      else
+        fail "Échec de l'installation pour '$tool'."
+      fi
     fi
   done
-
-  # 2. S'il y a des outils à installer, on lance une seule commande APT
-  if [ ${#to_install[@]} -gt 0 ]; then
-    info "Installation en lot de : ${to_install[*]}"
-    
-    # On passe tout le tableau d'un coup à apt-get
-    if apt-get install -y "${to_install[@]}"; then
-      ok "Tous les outils manquants pour '$category' ont été installés."
-    else
-      fail "Échec lors de l'installation en lot pour '$category'."
-    fi
-  else
-    ok "Tous les outils de la catégorie '$category' sont déjà présents."
-  fi
 }
 
 # ── Installation par catégorie (GitHub) ──────────────────────
@@ -216,8 +204,7 @@ run_step() {
   else
     fail "Le script $label a échoué — vérifie $script"
   fi
-  
-  # On active le drapeau uniquement si le script lancé est celui des configs
+  # Activer le flag si les configs ont été installées
   if [ "$label" = "Configs" ]; then
     CONFIGS_INSTALLED=true
   fi
@@ -324,10 +311,6 @@ install_recon() {
 }
 
 install_osint_identity() {
-  if ! command -v go &> /dev/null; then
-    info "Golang est requis pour cette catégorie. Installation en cours..."
-    apt-get install -y golang-go
-  fi
   install_category_github "OSINT — Identités & Fuites" \
     "holehe|https://github.com/megadose/holehe" \
     "trufflehog|https://github.com/trufflesecurity/trufflehog"
@@ -405,10 +388,15 @@ install_exploit() {
 
 install_utils() {
   install_category_apt "Utilitaires" \
-    tmux git python3-pip jq wget unzip golang-go
+    tmux git jq wget unzip golang-go pipx ruby gem
+  # S'assurer que pipx est dans le PATH du vrai utilisateur
+  su - "$REAL_USER" -c "pipx ensurepath" &>/dev/null || true
 }
 
 install_all() {
+  # ⚠️ install_utils EN PREMIER — installe golang-go, pipx et git
+  # nécessaires pour les étapes suivantes (go install, pipx install, git clone)
+  install_utils
   install_recon
   install_osint_identity
   install_web
@@ -419,7 +407,6 @@ install_all() {
   install_pivoting
   install_forensics
   install_exploit
-  install_utils
 }
 
 # ── MAIN ─────────────────────────────────────────────────────

@@ -4,19 +4,17 @@
 # toolkit v1.1
 # ============================================================
 
-set -e
-
 REAL_USER="${SUDO_USER:-$USER}"
 REAL_HOME=$(eval echo "~$REAL_USER")
 
-RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
+RED='\033[0;31m'; GREEN='\033[1;35m'; YELLOW='\033[0;35m'; CYAN='\033[1;34m'; NC='\033[0m'
 
 install_apt() {
     local pkg="$1"
     if dpkg -s "$pkg" &>/dev/null; then
-        echo -e "  ${YELLOW}[~]${NC} $pkg déjà installé"
+        echo -e "  \033[0;36m[~]\033[0m $pkg déjà installé"
     else
-        echo -e "  ${GREEN}[+]${NC} Installation de $pkg..."
+        echo -e "  ${CYAN}[+]${NC} Installation de $pkg..."
         apt install -y "$pkg" 2>/dev/null && \
             echo -e "  ${GREEN}[✓]${NC} $pkg installé" || \
             echo -e "  ${RED}[✗]${NC} Échec : $pkg"
@@ -24,12 +22,29 @@ install_apt() {
 }
 
 echo ""
-echo -e "${GREEN}══════════════════════════════════════════${NC}"
-echo -e "${GREEN}   Installation des outils apt — v1.1     ${NC}"
-echo -e "${GREEN}══════════════════════════════════════════${NC}"
+echo -e "${CYAN}══════════════════════════════════════════${NC}"
+echo -e "${CYAN}   Installation des outils apt — v1.1     ${NC}"
+echo -e "${CYAN}══════════════════════════════════════════${NC}"
 echo ""
 
 apt update -qq
+
+# ─────────────────────────────────────────────
+# Utilitaires de base (en premier)
+# ─────────────────────────────────────────────
+echo -e "\n${YELLOW}[*] Utilitaires de base${NC}"
+install_apt pipx              # Gestionnaire d'outils Python isolés
+install_apt tmux
+install_apt git
+install_apt jq
+install_apt wget
+install_apt unzip
+install_apt golang-go
+install_apt ruby
+install_apt gem
+
+# S'assurer que pipx est dans le PATH
+su - "$REAL_USER" -c "pipx ensurepath" &>/dev/null || true
 
 # ─────────────────────────────────────────────
 # Recon & OSINT
@@ -107,20 +122,6 @@ install_apt upx-ucl
 # ─────────────────────────────────────────────
 echo -e "\n${YELLOW}[*] Exploitation${NC}"
 install_apt metasploit-framework
-
-# ─────────────────────────────────────────────
-# Utils
-# ─────────────────────────────────────────────
-echo -e "\n${YELLOW}[*] Utils${NC}"
-install_apt tmux
-install_apt git
-install_apt python3-pip
-install_apt jq
-install_apt wget
-install_apt unzip
-install_apt golang-go
-install_apt ruby
-install_apt gem
 
 echo ""
 echo -e "${GREEN}[✓] Installation apt terminée.${NC}"
