@@ -1,4 +1,4 @@
-# ⚡ toolkit v1.1
+# ⚡ toolkit v1.1.0
 
 > Mon environnement de cybersécurité portable — Kali Linux / Parrot OS.
 
