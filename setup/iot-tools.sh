@@ -7,83 +7,113 @@
 #     sudo bash setup/iot-tools.sh
 # ============================================================
 
-set -e
-
 REAL_USER="${SUDO_USER:-$USER}"
-REAL_HOME=$(eval echo "~$REAL_USER")
+REAL_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)
 TOOLS="$REAL_HOME/tools"
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
+
+step() { echo -e "\n${YELLOW}[*] ── $1 ──${NC}"; }
+ok()   { echo -e "  ${GREEN}[✓]${NC} $1"; }
+warn() { echo -e "  ${YELLOW}[!]${NC} $1"; }
+fail() { echo -e "  ${RED}[✗]${NC} $1"; }
+info() { echo -e "  ${YELLOW}[>]${NC} $1"; }
 
 mkdir -p "$TOOLS"
 
 install_apt() {
     local pkg="$1"
     if dpkg -s "$pkg" &>/dev/null; then
-        echo -e "  ${YELLOW}[~]${NC} $pkg déjà installé"
+        echo -e "  \033[0;36m[~]\033[0m $pkg déjà installé — ignoré."
     else
-        apt install -y "$pkg" 2>/dev/null && \
-            echo -e "  ${GREEN}[✓]${NC} $pkg" || \
-            echo -e "  ${RED}[✗]${NC} Échec : $pkg"
+        info "Installation de $pkg..."
+        apt-get install -y "$pkg" &>/dev/null && ok "$pkg installé" || fail "Échec : $pkg"
     fi
 }
 
 clone_tool() {
     local name="$1"
     local repo="$2"
-    if [ -d "$TOOLS/$name" ]; then
-        echo -e "  ${YELLOW}[~]${NC} $name déjà cloné"
+    local dest="$TOOLS/$name"
+    if [ -d "$dest" ]; then
+        info "Mise à jour de $name..."
+        git -C "$dest" pull -q && ok "$name mis à jour" || warn "$name — échec du pull"
     else
-        git clone --depth=1 "$repo" "$TOOLS/$name" 2>/dev/null && \
-            echo -e "  ${GREEN}[✓]${NC} $name cloné" || \
-            echo -e "  ${RED}[✗]${NC} Échec : $name"
+        info "Clonage de $name..."
+        git clone --depth=1 "$repo" "$dest" -q \
+            && ok "$name cloné dans $dest" \
+            && chown -R "$REAL_USER":"$REAL_USER" "$dest" \
+            || fail "Échec du clonage de $name"
     fi
+}
+
+pip_install() {
+    local pkg="$1"
+    info "pip install $pkg..."
+    pip install "$pkg" \
+        --break-system-packages \
+        --ignore-installed \
+        -q 2>/dev/null \
+        && ok "$pkg installé" \
+        || warn "$pkg — certaines dépendances déjà gérées par apt (ignoré)"
+}
+
+pip_install_req() {
+    local req_file="$1"
+    local tool_name="$2"
+    info "Installation des dépendances de $tool_name..."
+    pip install -r "$req_file" \
+        --break-system-packages \
+        --ignore-installed \
+        -q 2>/dev/null \
+        && ok "Dépendances de $tool_name installées" \
+        || warn "$tool_name — certaines dépendances déjà gérées par apt (ignoré)"
 }
 
 echo ""
 echo -e "${GREEN}══════════════════════════════════════════${NC}"
-echo -e "${GREEN}   Module IoT & WiFi — v1.1               ${NC}"
+echo -e "${GREEN}   Module IoT & WiFi — toolkit v1.1       ${NC}"
 echo -e "${GREEN}══════════════════════════════════════════${NC}"
 echo ""
 
-apt update -qq
+apt-get update -qq
 
 # ─────────────────────────────────────────────
 # WiFi — Capture & Cracking
 # ─────────────────────────────────────────────
-echo -e "\n${YELLOW}[*] WiFi — Capture & Cracking${NC}"
+step "WiFi — Capture & Cracking"
 install_apt aircrack-ng
 install_apt hcxdumptool
-install_apt hcxtools          # hcxpcapngtool inclus
+install_apt hcxtools
 install_apt hostapd
 install_apt dnsmasq
 
 # ─────────────────────────────────────────────
 # MQTT & Protocoles IoT
 # ─────────────────────────────────────────────
-echo -e "\n${YELLOW}[*] MQTT & Protocoles IoT${NC}"
+step "MQTT & Protocoles IoT"
 install_apt mosquitto
 install_apt mosquitto-clients
 
 # ─────────────────────────────────────────────
 # BLE & Bluetooth
 # ─────────────────────────────────────────────
-echo -e "\n${YELLOW}[*] BLE & Bluetooth${NC}"
+step "BLE & Bluetooth"
 install_apt bluetooth
-install_apt bluez              # hcitool, gatttool inclus
+install_apt bluez
 install_apt ubertooth
 
 # ─────────────────────────────────────────────
 # Réseau IoT
 # ─────────────────────────────────────────────
-echo -e "\n${YELLOW}[*] Réseau IoT${NC}"
+step "Réseau IoT"
 install_apt bettercap
 install_apt arp-scan
 
 # ─────────────────────────────────────────────
 # Hardware / Embedded
 # ─────────────────────────────────────────────
-echo -e "\n${YELLOW}[*] Hardware / Embedded${NC}"
+step "Hardware / Embedded"
 install_apt picocom
 install_apt minicom
 install_apt screen
@@ -93,33 +123,33 @@ install_apt binwalk
 # ─────────────────────────────────────────────
 # ESP32 / MicroPython
 # ─────────────────────────────────────────────
-echo -e "\n${YELLOW}[*] ESP32 / MicroPython${NC}"
-pip install esptool --break-system-packages && \
-    echo -e "  ${GREEN}[✓]${NC} esptool installé" || \
-    echo -e "  ${RED}[✗]${NC} Échec esptool"
+step "ESP32 / MicroPython"
+pip_install esptool
 
 # ─────────────────────────────────────────────
-# RouterSploit — Exploitation routeurs
+# RouterSploit
 # ─────────────────────────────────────────────
-echo -e "\n${YELLOW}[*] RouterSploit${NC}"
-if [ ! -d "$TOOLS/routersploit" ]; then
-    git clone --depth=1 "https://github.com/threat9/routersploit" "$TOOLS/routersploit"
-    pip install -r "$TOOLS/routersploit/requirements.txt" --break-system-packages
-    echo -e "  ${GREEN}[✓]${NC} RouterSploit installé"
-else
-    echo -e "  ${YELLOW}[~]${NC} RouterSploit déjà installé"
+step "RouterSploit"
+clone_tool "routersploit" "https://github.com/threat9/routersploit"
+
+if [ -f "$TOOLS/routersploit/requirements.txt" ]; then
+    pip_install_req "$TOOLS/routersploit/requirements.txt" "RouterSploit"
 fi
 
 # ─────────────────────────────────────────────
 # Résumé
 # ─────────────────────────────────────────────
 echo ""
-echo -e "${GREEN}[✓] Module IoT & WiFi installé.${NC}"
-echo -e "\n${YELLOW}Outils disponibles :${NC}"
+echo -e "${GREEN}══════════════════════════════════════════${NC}"
+echo -e "${GREEN}  [✓] Module IoT & WiFi installé.         ${NC}"
+echo -e "${GREEN}══════════════════════════════════════════${NC}"
+echo ""
+echo -e "${YELLOW}  Outils disponibles :${NC}"
 echo "  WiFi    : aircrack-ng, hcxdumptool, hcxpcapngtool, hostapd, dnsmasq"
 echo "  MQTT    : mosquitto, mosquitto_pub, mosquitto_sub"
 echo "  BLE     : hcitool, gatttool, ubertooth"
 echo "  Réseau  : bettercap, arp-scan"
 echo "  HW      : picocom, minicom, screen, openocd, binwalk"
 echo "  ESP32   : esptool"
-echo "  Exploit : routersploit (\$TOOLS/routersploit)"
+echo "  Exploit : routersploit → $TOOLS/routersploit/rsf.py"
+echo ""
