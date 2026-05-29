@@ -1,4 +1,4 @@
-# ⚡ toolkit v1.1.0
+# ⚡ toolkit v1.2.0
 
 > Mon environnement de cybersécurité portable — Kali Linux / Parrot OS.
 
@@ -33,8 +33,8 @@ toolkit/
 │   ├── git-tools.sh            # Outils via GitHub → ~/tools/
 │   ├── wordlists.sh            # Wordlists → ~/wordlists/
 │   ├── configs.sh              # Dotfiles + ~/.zshenv
-│   ├── re-tools.sh             # 🆕 Reverse Engineering (optionnel, ~200 Mo + Ghidra ~1 Go)
-│   └── iot-tools.sh            # 🆕 IoT & WiFi (optionnel, ~300 Mo)
+│   ├── re-tools.sh             # Reverse Engineering (optionnel, ~200 Mo + Ghidra ~1 Go)
+│   └── iot-tools.sh            # IoT & WiFi (optionnel, ~300 Mo)
 ├── configs/
 │   ├── .zshrc                  # Aliases, fonctions, prompt custom
 │   └── tmux.conf               # Config tmux
@@ -59,12 +59,12 @@ toolkit/
 |---|---|
 | Recon & OSINT | nmap, amass, recon-ng, maltego, sherlock, dnsenum, whatweb, exiftool |
 | Web | burpsuite, zaproxy, ffuf, gobuster, feroxbuster, nikto, curl, dirb, wfuzz, sqlmap, wafw00f |
-| Network | netcat, hydra, enum4linux, nbtscan, onesixtyone, snmp, macchanger, wireshark, tcpdump |
-| Databases | mysql-client, postgresql-client |
-| Passwords | hashcat, john, crunch, **medusa**, **ncrack** |
-| RE (base) | **gdb**, **binutils** (readelf, objdump, strings, file), **strace**, **ltrace**, **binwalk**, **upx** |
+| Réseau | netcat, hydra, enum4linux, nbtscan, onesixtyone, snmp, macchanger, wireshark, tcpdump |
+| Bases de données | mysql-client, postgresql-client |
+| Passwords | hashcat, john, crunch, medusa, ncrack |
+| RE (base) | gdb, binutils (readelf, objdump, strings, file), strace, ltrace, binwalk, upx |
 | Exploit | metasploit-framework |
-| Utils | tmux, git, python3-pip, jq, wget, unzip, golang-go |
+| Utils | tmux, git, jq, wget, unzip, golang-go, pipx, ruby, gem |
 
 ### Via GitHub → `~/tools/`
 
@@ -74,51 +74,51 @@ toolkit/
 | Recon & OSINT | Datasploit | https://github.com/DataSploit/datasploit |
 | Recon & OSINT | Photon | https://github.com/s0md3v/Photon |
 | Recon & OSINT | Social-Analyzer | https://github.com/qeeqbox/social-analyzer |
-| **OSINT** | **Holehe** | https://github.com/megadose/holehe |
-| **OSINT** | **TruffleHog** | https://github.com/trufflesecurity/trufflehog |
-| **OSINT** | **PhoneInfoga** | https://github.com/sundowndev/phoneinfoga |
-| **OSINT** | **WaybackURLs** | https://github.com/tomnomnom/waybackurls |
+| OSINT | Holehe (pipx) | https://github.com/megadose/holehe |
+| OSINT | TruffleHog | https://github.com/trufflesecurity/trufflehog |
+| OSINT | PhoneInfoga (go) | https://github.com/sundowndev/phoneinfoga |
+| OSINT | WaybackURLs (go) | https://github.com/tomnomnom/waybackurls |
 | Web | XSStrike | https://github.com/s0md3v/XSStrike |
 | Web | BruteXSS | https://github.com/rajeshmajumdar/BruteXSS |
 | Web | Gopherus | https://github.com/tarunkant/Gopherus |
 | Web | Drupwn | https://github.com/immunIT/drupwn |
 | Web | Droopescan | https://github.com/SamJoan/droopescan |
-| Network | Impacket | https://github.com/fortra/impacket |
-| Network | SMTP-User-Enum | https://github.com/cytopia/smtp-user-enum |
-| Network | SIPVicious | https://github.com/EnableSecurity/sipvicious |
+| Réseau | Impacket (pipx) | https://github.com/fortra/impacket |
+| Réseau | SMTP-User-Enum | https://github.com/cytopia/smtp-user-enum |
+| Réseau | SIPVicious | https://github.com/EnableSecurity/sipvicious |
 | Post-Exploit | PEASS-ng (LinPEAS/WinPEAS) | https://github.com/peass-ng/PEASS-ng |
-| Post-Exploit | pwncat | https://github.com/calebstewart/pwncat |
+| Post-Exploit | pwncat (pipx) | https://github.com/calebstewart/pwncat |
 | Post-Exploit | Evil-WinRM | https://github.com/Hackplayers/evil-winrm |
 | Post-Exploit | Mimikatz | https://github.com/gentilkiwi/mimikatz |
-| Post-Exploit | CrackMapExec | https://github.com/byt3bl33d3r/CrackMapExec |
+| Post-Exploit | CrackMapExec (pipx) | https://github.com/byt3bl33d3r/CrackMapExec |
 | Post-Exploit | Bashfuscator | https://github.com/Bashfuscator/Bashfuscator |
-| **PrivEsc Windows** | **GodPotato** | https://github.com/BeichenDream/GodPotato |
-| **PrivEsc Windows** | **PrintSpoofer** | https://github.com/itm4n/PrintSpoofer |
-| **PrivEsc Windows** | **JuicyPotato** | https://github.com/ohpe/juicy-potato |
-| Pivoting | Chisel | https://github.com/jpillora/chisel |
-| Pivoting | Ligolo-ng | https://github.com/nicocha30/ligolo-ng |
+| PrivEsc Windows | GodPotato | https://github.com/BeichenDream/GodPotato |
+| PrivEsc Windows | PrintSpoofer | https://github.com/itm4n/PrintSpoofer |
+| PrivEsc Windows | JuicyPotato | https://github.com/ohpe/juicy-potato |
+| Pivoting | Chisel (go) | https://github.com/jpillora/chisel |
+| Pivoting | Ligolo-ng (go) | https://github.com/nicocha30/ligolo-ng |
 | Pivoting | Proxychains-ng | https://github.com/rofl0r/proxychains-ng |
-| Pivoting | sshuttle | https://github.com/sshuttle/sshuttle |
-| **RE** | **pwndbg** | https://github.com/pwndbg/pwndbg |
+| Pivoting | sshuttle (pipx) | https://github.com/sshuttle/sshuttle |
+| RE | pwndbg | https://github.com/pwndbg/pwndbg |
 | Reverse Shells | revshells | https://github.com/0dayCTF/reverse-shell-generator |
 | Forensics | Autopsy | https://github.com/sleuthkit/autopsy |
 | Forensics | Volatility3 | https://github.com/volatilityfoundation/volatility3 |
-| Forensics | Plaso | https://github.com/log2timeline/plaso |
+| Forensics | Plaso (pipx) | https://github.com/log2timeline/plaso |
 
-### Module RE — `setup/re-tools.sh` 🆕
+### Module RE — `setup/re-tools.sh`
 
 > Module optionnel — `sudo bash setup/re-tools.sh`
 
 | Outil | Description |
 |---|---|
 | gdb + pwndbg | Debugger Linux + extension CTF |
-| pwntools | Framework Python exploit dev |
-| checksec | Vérification des protections d'un binaire |
+| pwntools (pipx) | Framework Python exploit dev |
+| checksec (pipx) | Vérification des protections d'un binaire |
 | binwalk | Extraction de firmware |
 | upx | Décompression de binaires packés |
 | Ghidra | Désassembleur/décompilateur NSA (optionnel, ~1 Go) |
 
-### Module IoT & WiFi — `setup/iot-tools.sh` 🆕
+### Module IoT & WiFi — `setup/iot-tools.sh`
 
 > Module optionnel — `sudo bash setup/iot-tools.sh`
 
@@ -130,8 +130,8 @@ toolkit/
 | mosquitto + clients | Broker MQTT + tests |
 | bluez (hcitool, gatttool) | BLE Bluetooth |
 | bettercap | Framework MitM/BLE/WiFi |
-| esptool | Flash ESP32/ESP8266 |
-| routersploit | Exploitation routeurs IoT |
+| esptool (pipx) | Flash ESP32/ESP8266 |
+| routersploit (venv) | Exploitation routeurs IoT |
 
 ---
 
@@ -187,9 +187,9 @@ cme smb <ip>          # CrackMapExec SMB
 
 ### PrivEsc Windows
 ```
-godpotato            # Token Impersonation (Win 2012→2022)
-printspoofer         # Token Impersonation (Win10/2019)
-juicypotato          # Token Impersonation (legacy)
+godpotato             # Token Impersonation (Win 2012→2022)
+printspoofer          # Token Impersonation (Win10/2019)
+juicypotato           # Token Impersonation (legacy)
 ```
 
 ### Pivoting
@@ -219,16 +219,15 @@ routersploit          # Framework exploitation routeurs
 ### Utils
 ```
 serve                 # python3 -m http.server 8080
-serve-linpeas         # sert linpeas + affiche commande cible
-serve-tool <path>     # sert n'importe quel fichier via HTTP
+serve-linpeas         # Sert linpeas + affiche commande cible
+serve-tool <path>     # Sert n'importe quel fichier via HTTP
 listen <port>         # nc -lvnp <port>
-target <nom>          # crée workspace/{recon,web,exploit,loot,notes,re}
-quickscan <ip>        # scan nmap + sauvegarde automatique
-b64e / b64d           # encode / décode base64
+target <nom>          # Crée workspace/{recon,web,exploit,loot,notes,re}
+quickscan <ip>        # Scan nmap + sauvegarde automatique
+b64e / b64d           # Encode / décode base64
 urlencode <string>    # URL encode
 myip                  # IP publique
 localip               # IP locale
-shell-old             # utiliser l'ancien terminal
 ```
 
 ---
@@ -236,7 +235,6 @@ shell-old             # utiliser l'ancien terminal
 ## 🐚 Reverse shells
 
 ```bash
-# Script CLI maison
 ./scripts/revshell.sh <LHOST> <LPORT> all
 # Types : bash · python · php · netcat · perl · ruby · powershell · upgrade · all
 ```
@@ -262,18 +260,14 @@ seclists/              ← SecLists complet
 
 | Outil | Commande requise |
 |---|---|
-| Impacket | `cd ~/tools/impacket && pip install . --break-system-packages` |
 | pwndbg | `cd ~/tools/pwndbg && ./setup.sh` |
-| Bashfuscator | `cd ~/tools/bashfuscator && pip install . --break-system-packages` |
-| pwncat | `pip install pwncat-cs --break-system-packages` |
-| CrackMapExec | `pip install crackmapexec --break-system-packages` |
-| sshuttle | `pip install sshuttle --break-system-packages` |
-| pwntools | `pip install pwntools --break-system-packages` |
-| Plaso | `pip install plaso --break-system-packages` |
+| Bashfuscator | `cd ~/tools/bashfuscator && pipx install .` |
 | Evil-WinRM | `gem install evil-winrm` |
 | Chisel | `cd ~/tools/chisel && go build .` |
 | Ligolo-ng | `cd ~/tools/ligolo-ng/cmd/proxy && go build .` |
 | Proxychains-ng | `cd ~/tools/proxychains-ng && ./configure && make && make install` |
+
+> Tous les outils Python (pwntools, pwncat, crackmapexec, holehe, sshuttle, plaso...) sont installés automatiquement via **pipx** — aucune étape manuelle requise.
 
 ---
 
@@ -306,24 +300,32 @@ Pour réinstaller un module :
 ```bash
 sudo bash setup/apt-tools.sh    # outils apt
 sudo bash setup/git-tools.sh    # outils GitHub
-sudo bash setup/re-tools.sh     # RE tools (nouveau)
-sudo bash setup/iot-tools.sh    # IoT tools (nouveau)
+sudo bash setup/re-tools.sh     # module RE
+sudo bash setup/iot-tools.sh    # module IoT
 ```
 
 ---
 
 ## 📋 Changelog
 
-### v1.1 (2026-05)
-- ✅ Ajout `setup/re-tools.sh` — module Reverse Engineering (gdb, pwndbg, pwntools, ghidra)
-- ✅ Ajout `setup/iot-tools.sh` — module IoT & WiFi (aircrack, mosquitto, bettercap...)
+### v1.2.0 (2026-05)
+- ✅ Suppression des doublons dans `install.sh` et `iot-tools.sh`
+- ✅ `#!/bin/bash` ne s'affiche plus à la fin de l'exécution
+- ✅ Message "Lance un nouveau terminal" conditionnel à l'installation des configs
+- ✅ **pipx** remplace pip pour tous les outils Python
+- ✅ `install_utils` s'exécute en premier — golang-go et pipx garantis avant tout outil
+- ✅ Venv isolé pour RouterSploit (plus de conflits apt/pip)
+- ✅ Vérification automatique de Go et pipx dans `git-tools.sh`
+
+### v1.1.0 (2026-05)
+- ✅ Ajout `setup/re-tools.sh` — module Reverse Engineering
+- ✅ Ajout `setup/iot-tools.sh` — module IoT & WiFi
 - ✅ apt-tools.sh : medusa, ncrack, gdb, binutils, strace, ltrace, binwalk, upx, tcpdump
 - ✅ git-tools.sh : holehe, trufflehog, phoneinfroga, waybackurls, GodPotato, PrintSpoofer, JuicyPotato, pwndbg
 - ✅ .zshrc : +30 nouveaux aliases (RE, IoT, WiFi, OSINT, PrivEsc)
 - ✅ install.sh : menu mis à jour avec modules 5 (RE) et 6 (IoT)
-- ✅ Workspace étendu : ajout du dossier `re/`
 
-### v1.0 (2026-05-26)
+### v1.0.0 (2026-05-26)
 - 🎉 Release initiale
 
 ---
