@@ -204,8 +204,11 @@ run_step() {
   else
     fail "Le script $label a échoué — vérifie $script"
   fi
-  run_step "Configs" "setup/configs.sh"
-  CONFIGS_INSTALLED=true
+  
+  # On active le drapeau uniquement si le script lancé est celui des configs
+  if [ "$label" = "Configs" ]; then
+    CONFIGS_INSTALLED=true
+  fi
 }
 
 # ── Menu principal ────────────────────────────────────────────
