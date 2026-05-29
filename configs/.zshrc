@@ -153,3 +153,9 @@ alias revshell='bash $TOOLKIT_DIR/scripts/revshell.sh'
 alias ll='ls -la --color=auto'
 alias ls='ls --color=auto'
 alias grep='grep --color=auto'
+
+# Navigation mot par mot avec Ctrl + Gauche/Droite
+bindkey "^[[1;5C" forward-word
+bindkey "^[[1;5D" backward-word
+
+
