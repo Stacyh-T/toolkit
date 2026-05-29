@@ -1,50 +1,54 @@
 #!/bin/bash
-
 # ============================================================
-#   APT TOOLS INSTALLER
-#   Installe tous les outils disponibles via apt
+# apt-tools.sh — Installation des outils via apt
+# toolkit v1.1
 # ============================================================
 
-ok()   { echo -e "\033[0;32m[✓]\033[0m $1"; }
-skip() { echo -e "\033[0;36m[~]\033[0m $1"; }
-fail() { echo -e "\033[0;31m[✗]\033[0m $1"; }
-step() { echo -e "\n\033[0;36m[*]\033[0m $1"; }
+set -e
+
+REAL_USER="${SUDO_USER:-$USER}"
+REAL_HOME=$(eval echo "~$REAL_USER")
+
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
 
 install_apt() {
-  local tool="$1"
-  if command -v "$tool" &>/dev/null; then
-    skip "$tool (déjà installé — ignoré)"
-    return
-  fi
-  if dpkg -s "$tool" &>/dev/null 2>&1; then
-    skip "$tool (déjà installé via dpkg — ignoré)"
-    return
-  fi
-  if apt-get install -y "$tool" &>/dev/null; then
-    ok "$tool installé"
-  else
-    fail "$tool (échec — vérifie manuellement)"
-  fi
+    local pkg="$1"
+    if dpkg -s "$pkg" &>/dev/null; then
+        echo -e "  ${YELLOW}[~]${NC} $pkg déjà installé"
+    else
+        echo -e "  ${GREEN}[+]${NC} Installation de $pkg..."
+        apt install -y "$pkg" 2>/dev/null && \
+            echo -e "  ${GREEN}[✓]${NC} $pkg installé" || \
+            echo -e "  ${RED}[✗]${NC} Échec : $pkg"
+    fi
 }
 
-step "Mise à jour des paquets..."
-apt-get update -qq
+echo ""
+echo -e "${GREEN}══════════════════════════════════════════${NC}"
+echo -e "${GREEN}   Installation des outils apt — v1.1     ${NC}"
+echo -e "${GREEN}══════════════════════════════════════════${NC}"
+echo ""
 
-# ── RECON & OSINT ────────────────────────────────────────────
-step "Recon & OSINT"
+apt update -qq
+
+# ─────────────────────────────────────────────
+# Recon & OSINT
+# ─────────────────────────────────────────────
+echo -e "\n${YELLOW}[*] Recon & OSINT${NC}"
 install_apt nmap
 install_apt amass
-install_apt recon-ng
-install_apt maltego
-install_apt sherlock
 install_apt dnsenum
 install_apt whatweb
 install_apt exiftool
+install_apt sherlock
+install_apt maltego
 
-# ── WEB SECURITY ─────────────────────────────────────────────
-step "Web Security"
-install_apt burpsuite          # Kali uniquement
-install_apt zaproxy            # OWASP ZAP
+# ─────────────────────────────────────────────
+# Web
+# ─────────────────────────────────────────────
+echo -e "\n${YELLOW}[*] Web${NC}"
+install_apt burpsuite
+install_apt zaproxy
 install_apt ffuf
 install_apt gobuster
 install_apt feroxbuster
@@ -55,45 +59,68 @@ install_apt wfuzz
 install_apt sqlmap
 install_apt wafw00f
 
-# ── NETWORK ──────────────────────────────────────────────────
-step "Network"
+# ─────────────────────────────────────────────
+# Réseau & Enumération
+# ─────────────────────────────────────────────
+echo -e "\n${YELLOW}[*] Réseau & Enumération${NC}"
 install_apt netcat-traditional
 install_apt hydra
 install_apt enum4linux
 install_apt nbtscan
 install_apt onesixtyone
-install_apt snmp              # ✅ paquet correct (fournit snmpwalk, snmpget…)
+install_apt snmp
 install_apt macchanger
 install_apt wireshark
 install_apt tcpdump
+install_apt ncat
 
-# ── DATABASES ────────────────────────────────────────────────
-step "Databases"
-install_apt default-mysql-client   # mysql client
-install_apt postgresql-client      # psql client
+# ─────────────────────────────────────────────
+# Bases de données
+# ─────────────────────────────────────────────
+echo -e "\n${YELLOW}[*] Bases de données${NC}"
+install_apt default-mysql-client
+install_apt postgresql-client
 
-# ── PASSWORDS & CRACKING ─────────────────────────────────────
-step "Password Cracking"
+# ─────────────────────────────────────────────
+# Passwords & Brute Force
+# ─────────────────────────────────────────────
+echo -e "\n${YELLOW}[*] Passwords & Brute Force${NC}"
 install_apt hashcat
 install_apt john
 install_apt crunch
+install_apt medusa
+install_apt ncrack
 
-# ── EXPLOIT ──────────────────────────────────────────────────
-step "Exploit"
+# ─────────────────────────────────────────────
+# Reverse Engineering — Analyse statique
+# ─────────────────────────────────────────────
+echo -e "\n${YELLOW}[*] Reverse Engineering${NC}"
+install_apt gdb
+install_apt binutils         # readelf, objdump, strings, nm, file
+install_apt strace
+install_apt ltrace
+install_apt binwalk
+install_apt upx-ucl
+
+# ─────────────────────────────────────────────
+# Exploitation
+# ─────────────────────────────────────────────
+echo -e "\n${YELLOW}[*] Exploitation${NC}"
 install_apt metasploit-framework
 
-# ── FORENSICS ────────────────────────────────────────────────
-# autopsy    → installé depuis GitHub (version à jour)
-# volatility3 → installé depuis GitHub (version à jour)
-
-# ── UTILS ────────────────────────────────────────────────────
-step "Utilitaires"
+# ─────────────────────────────────────────────
+# Utils
+# ─────────────────────────────────────────────
+echo -e "\n${YELLOW}[*] Utils${NC}"
 install_apt tmux
 install_apt git
 install_apt python3-pip
 install_apt jq
 install_apt wget
 install_apt unzip
-install_apt zsh-syntax-highlighting
+install_apt golang-go
+install_apt ruby
+install_apt gem
 
-ok "Installation apt terminée."
+echo ""
+echo -e "${GREEN}[✓] Installation apt terminée.${NC}"
