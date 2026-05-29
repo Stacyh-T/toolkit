@@ -228,6 +228,8 @@ b64e / b64d           # encode / décode base64
 urlencode <string>    # URL encode
 myip                  # IP publique
 localip               # IP locale
+shell-old             # utiliser l'ancien terminal
+shell-new             # utiliser le nouveau terminal
 ```
 
 ---
