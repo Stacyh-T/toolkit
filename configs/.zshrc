@@ -139,7 +139,6 @@ alias myip='curl -s ifconfig.me'
 alias localip='ip route get 1 | awk "{print \$7; exit}"'
 quickscan() { mkdir -p recon && nmap -sV -sC -T4 "$1" -oA recon/nmap_quick && cat recon/nmap_quick.nmap; }
 alias shell-old='rm ~/.zshrc && cp ~/.zshrc.bak ~/.zshrc && exec zsh'
-alias shell-new='rm ~/.zshrc && ln -s ~/toolkit/configs/.zshrc ~/.zshrc && exec zsh'
 
 # Encodage
 alias b64e='base64 -w 0'
