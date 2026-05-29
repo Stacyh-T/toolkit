@@ -27,8 +27,8 @@ AVG_APT_MB=25
 AVG_GITHUB_MB=20
 SIZE_WORDLISTS=1200
 SIZE_CONFIGS=1
-SIZE_RE=250          # sans Ghidra
-SIZE_RE_GHIDRA=1250  # avec Ghidra
+SIZE_RE=250
+SIZE_RE_GHIDRA=1250
 SIZE_IOT=300
 
 # ── Calcul dynamique ─────────────────────────────────────────
@@ -36,6 +36,17 @@ NB_APT=$(grep -c "install_apt" "$TOOLKIT_DIR/setup/apt-tools.sh" 2>/dev/null || 
 NB_GITHUB=$(grep -c "clone_tool\|install_category_github" "$TOOLKIT_DIR/setup/git-tools.sh" 2>/dev/null || echo 0)
 SIZE_APT=$(( NB_APT * AVG_APT_MB ))
 SIZE_GITHUB=$(( NB_GITHUB * AVG_GITHUB_MB ))
+
+# ── APT update (une seule fois, au lancement) ────────────────
+APT_UPDATED=false
+
+apt_update() {
+    if [ "$APT_UPDATED" = false ]; then
+        echo -e "\n${CYAN}[*] Mise à jour des dépôts APT...${NC}"
+        apt-get update -qq && echo -e "${GREEN}[✓] APT à jour.${NC}"
+        APT_UPDATED=true
+    fi
+}
 
 # ── Fonctions affichage ──────────────────────────────────────
 banner() {
@@ -133,6 +144,7 @@ install_category_apt() {
   local category="$1"
   local tools=("${@:2}")
   step "Installation APT — $category"
+  apt_update
   for tool in "${tools[@]}"; do
     if command -v "$tool" &>/dev/null || dpkg -s "$tool" &>/dev/null 2>&1; then
       echo -e "\033[0;36m[~]\033[0m L'outil '$tool' est déjà installé — ignoré."
@@ -183,6 +195,7 @@ install_category_github() {
 run_step() {
   local label="$1"
   local script="$2"
+  apt_update
   step "$label"
   if bash "$TOOLKIT_DIR/$script"; then
     ok "Script $label terminé."
@@ -208,6 +221,7 @@ main_menu() {
   case $choice in
     1)
       check_disk_space $(( SIZE_APT + SIZE_GITHUB + SIZE_WORDLISTS + SIZE_CONFIGS ))
+      apt_update
       install_all
       run_step "Wordlists"  "setup/wordlists.sh"
       run_step "Configs"    "setup/configs.sh"
@@ -254,8 +268,7 @@ category_menu() {
   read -rp "  Tes choix : " -a choices
   echo ""
 
-  info "Mise à jour des dépôts APT..."
-  apt-get update
+  apt_update
 
   for c in "${choices[@]}"; do
     case $c in
@@ -373,8 +386,6 @@ install_utils() {
 }
 
 install_all() {
-  info "Mise à jour des dépôts APT..."
-  apt-get update
   install_recon
   install_osint_identity
   install_web
