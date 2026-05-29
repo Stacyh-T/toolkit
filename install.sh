@@ -15,6 +15,8 @@ NC='\033[0m'
 
 TOOLKIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+CONFIGS_INSTALLED=false
+
 # ── Résolution du vrai utilisateur ───────────────────────────
 REAL_USER="${SUDO_USER:-$USER}"
 REAL_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)
@@ -201,6 +203,10 @@ run_step() {
     ok "Script $label terminé."
   else
     fail "Le script $label a échoué — vérifie $script"
+  fi
+  # Activer le flag si les configs ont été installées
+  if [ "$label" = "Configs" ]; then
+    CONFIGS_INSTALLED=true
   fi
 }
 
@@ -413,6 +419,8 @@ echo ""
 echo -e "${GREEN}════════════════════════════════════════${NC}"
 echo -e "${GREEN}  Toolkit prêt.${NC}"
 echo -e "${GREEN}  Outils dans : $REAL_HOME/tools/${NC}"
-echo -e "${GREEN}  Lance un nouveau terminal pour activer l'environnement.${NC}"
+if [ "$CONFIGS_INSTALLED" = true ]; then
+  echo -e "${GREEN}  Lance un nouveau terminal pour activer l'environnement.${NC}"
+fi
 echo -e "${GREEN}════════════════════════════════════════${NC}"
-echo ""#!/bin/bash
+echo ""
