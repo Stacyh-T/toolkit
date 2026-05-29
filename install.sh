@@ -145,21 +145,33 @@ check_root() {
 install_category_apt() {
   local category="$1"
   local tools=("${@:2}")
+  local to_install=() # Notre "panier" pour les paquets manquants
+
   step "Installation APT — $category"
   apt_update
+
+  # 1. On trie les outils : déjà installés vs à installer
   for tool in "${tools[@]}"; do
     if command -v "$tool" &>/dev/null || dpkg -s "$tool" &>/dev/null 2>&1; then
       echo -e "\033[0;36m[~]\033[0m L'outil '$tool' est déjà installé — ignoré."
     else
-      info "Installation de '$tool' via APT..."
-      apt-get install -y "$tool"
-      if [ $? -eq 0 ]; then
-        ok "'$tool' installé avec succès."
-      else
-        fail "Échec de l'installation pour '$tool'."
-      fi
+      to_install+=("$tool")
     fi
   done
+
+  # 2. S'il y a des outils à installer, on lance une seule commande APT
+  if [ ${#to_install[@]} -gt 0 ]; then
+    info "Installation en lot de : ${to_install[*]}"
+    
+    # On passe tout le tableau d'un coup à apt-get
+    if apt-get install -y "${to_install[@]}"; then
+      ok "Tous les outils manquants pour '$category' ont été installés."
+    else
+      fail "Échec lors de l'installation en lot pour '$category'."
+    fi
+  else
+    ok "Tous les outils de la catégorie '$category' sont déjà présents."
+  fi
 }
 
 # ── Installation par catégorie (GitHub) ──────────────────────
