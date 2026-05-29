@@ -309,6 +309,10 @@ install_recon() {
 }
 
 install_osint_identity() {
+  if ! command -v go &> /dev/null; then
+    info "Golang est requis pour cette catégorie. Installation en cours..."
+    apt-get install -y golang-go
+  fi
   install_category_github "OSINT — Identités & Fuites" \
     "holehe|https://github.com/megadose/holehe" \
     "trufflehog|https://github.com/trufflesecurity/trufflehog"
